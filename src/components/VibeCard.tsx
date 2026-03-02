@@ -25,7 +25,7 @@ export default function VibeCard({ label, selected, onClick, children }: VibeCar
         relative flex flex-col rounded-2xl overflow-hidden cursor-pointer text-left w-full
         border-2 transition-all duration-300 group
         ${selected
-          ? 'border-[var(--accent)] shadow-[0_0_40px_rgba(139,108,255,0.25),0_0_80px_rgba(139,108,255,0.08)]'
+          ? 'border-[var(--accent)] shadow-[0_0_40px_rgba(0,102,255,0.25),0_0_80px_rgba(0,102,255,0.08)]'
           : 'border-[var(--border)] hover:border-[var(--border-hover)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.4)]'
         }
       `}
@@ -35,7 +35,7 @@ export default function VibeCard({ label, selected, onClick, children }: VibeCar
           initial={{ scale: 0, opacity: 0, rotate: -90 }}
           animate={{ scale: 1, opacity: 1, rotate: 0 }}
           transition={{ type: 'spring', stiffness: 500, damping: 18 }}
-          className="absolute top-2.5 right-2.5 z-20 w-6 h-6 rounded-full bg-[var(--accent)] flex items-center justify-center shadow-[0_2px_16px_rgba(139,108,255,0.5)]"
+          className="absolute top-2.5 right-2.5 z-20 w-6 h-6 rounded-full bg-[var(--accent)] flex items-center justify-center shadow-[0_2px_16px_rgba(0,102,255,0.5)]"
         >
           <Check size={13} strokeWidth={3} className="text-white" />
         </motion.div>
@@ -78,7 +78,7 @@ function Nav({ bg, logo, links, border }: { bg: string; logo: string; links: str
     <div className="flex items-center justify-between px-3 py-1.5" style={{ background: bg, borderBottom: `1px solid ${border}` }}>
       <div className="w-6 h-1.5 rounded-sm" style={{ background: logo }} />
       <div className="flex gap-1.5">
-        {[1,2,3].map(i => <div key={i} className="w-4 h-1 rounded-full" style={{ background: links }} />)}
+        {[1, 2, 3].map(i => <div key={i} className="w-4 h-1 rounded-full" style={{ background: links }} />)}
       </div>
     </div>
   )
@@ -100,7 +100,7 @@ function Hero({ bg, heading, sub, btnBg, btnText }: { bg: string; heading: strin
 function Cards({ bg, cardBg, cardBorder, accent }: { bg: string; cardBg: string; cardBorder: string; accent: string }) {
   return (
     <div className="flex gap-1.5 px-3 pb-2 flex-1" style={{ background: bg }}>
-      {[1,2,3].map(i => (
+      {[1, 2, 3].map(i => (
         <div key={i} className="flex-1 rounded p-1.5" style={{ background: cardBg, border: `1px solid ${cardBorder}` }}>
           <div className="w-3 h-3 rounded-sm mb-1" style={{ background: accent }} />
           <div className="w-full h-0.5 rounded-full mb-0.5" style={{ background: cardBorder }} />
@@ -167,7 +167,7 @@ export function VibrantMockup() {
       <div className="flex items-center justify-between px-3 py-1.5" style={{ borderBottom: '1px solid #1e0a3e', background: '#0f0320' }}>
         <div className="w-6 h-1.5 rounded-sm" style={{ background: 'linear-gradient(90deg, #7c3aed, #ec4899)' }} />
         <div className="flex gap-1.5">
-          {[1,2,3].map(i => <div key={i} className="w-4 h-1 rounded-full" style={{ background: '#4c1d95' }} />)}
+          {[1, 2, 3].map(i => <div key={i} className="w-4 h-1 rounded-full" style={{ background: '#4c1d95' }} />)}
         </div>
       </div>
       <div className="px-3 pt-3 pb-2" style={{ background: '#0f0320' }}>

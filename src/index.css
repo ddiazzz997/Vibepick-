@@ -3,23 +3,25 @@
 @tailwind utilities;
 
 :root {
-  --bg: #0c0c10;
-  --surface: #16161c;
-  --surface-raised: #1e1e26;
-  --surface-hover: #25252f;
-  --border: #32323e;
-  --border-hover: #44445a;
-  --border-focus: #8b6cff;
-  --accent: #8b6cff;
-  --accent-soft: rgba(139, 108, 255, 0.15);
-  --accent-glow: rgba(139, 108, 255, 0.3);
-  --text: #f2f2f5;
-  --text-muted: #b8b8c4;
-  --text-dim: #84849a;
-  --input-bg: #111116;
+  --bg: #000000;
+  --surface: #060a12;
+  --surface-raised: #0b1120;
+  --surface-hover: #1e293b;
+  --border: #1e293b;
+  --border-hover: #3b82f6;
+  --border-focus: #0088ff;
+  --accent: #0077ff;
+  --accent-soft: rgba(0, 119, 255, 0.15);
+  --accent-glow: rgba(0, 102, 255, 0.4);
+  --text: #f8fafc;
+  --text-muted: #94a3b8;
+  --text-dim: #475569;
+  --input-bg: #0b1120;
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
 body {
   margin: 0;
@@ -30,16 +32,28 @@ body {
   overflow-x: hidden;
 }
 
-#root { position: relative; z-index: 1; }
+#root {
+  position: relative;
+  z-index: 1;
+}
 
 /* ── Scrollbar ── */
-::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #4a4a5a; border-radius: 3px; }
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #4a4a5a;
+  border-radius: 3px;
+}
 
 ::selection {
-  background: rgba(139, 108, 255, 0.35);
-  color: #fff;
+  background: rgba(0, 102, 255, 0.35);
+  color: #ffffff;
 }
 
 /* ── Inputs — really pop now ── */
@@ -54,40 +68,86 @@ body {
   width: 100%;
   transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
   outline: none;
+  font-family: 'JetBrains Mono', monospace;
 }
 
-.input-glow::placeholder { color: var(--text-dim); }
+.input-glow::placeholder {
+  color: var(--text-dim);
+  font-family: 'Inter', sans-serif;
+}
 
 .input-glow:hover {
   border-color: var(--border-hover);
-  background: #141419;
+  background: #0a0f1a;
 }
 
 .input-glow:focus {
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px var(--accent-soft), 0 0 30px rgba(139, 108, 255, 0.12);
-  background: #141419;
+  box-shadow: 0 0 0 3px var(--accent-soft), 0 0 40px rgba(0, 119, 255, 0.2);
+  background: #000000;
 }
 
-textarea.input-glow { resize: none; }
+textarea.input-glow {
+  resize: none;
+}
+
+/* ── Glass Panels ── */
+.glass-panel {
+  background: rgba(6, 10, 18, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 119, 255, 0.15);
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  position: relative;
+  z-index: 10;
+}
 
 /* ── Prompt scroll ── */
-.prompt-scroll::-webkit-scrollbar { width: 3px; }
-.prompt-scroll::-webkit-scrollbar-track { background: transparent; }
-.prompt-scroll::-webkit-scrollbar-thumb { background: #4a4a5a; border-radius: 2px; }
+.prompt-scroll::-webkit-scrollbar {
+  width: 3px;
+}
+
+.prompt-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.prompt-scroll::-webkit-scrollbar-thumb {
+  background: #4a4a5a;
+  border-radius: 2px;
+}
 
 /* ── Pulse ── */
 @keyframes pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.3; transform: scale(0.85); }
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.3;
+    transform: scale(0.85);
+  }
 }
-.pulse { animation: pulse 2s ease-in-out infinite; }
+
+.pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
 
 /* ── Shimmer text ── */
 @keyframes shimmer {
-  0%   { background-position: -200% center; }
-  100% { background-position: 200% center; }
+  0% {
+    background-position: -200% center;
+  }
+
+  100% {
+    background-position: 200% center;
+  }
 }
+
 .shimmer-text {
   background-size: 200% auto;
   animation: shimmer 4s linear infinite;
@@ -95,32 +155,61 @@ textarea.input-glow { resize: none; }
 
 /* ── Hero orb float ── */
 @keyframes float-slow {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33%  { transform: translate(15px, -25px) scale(1.05); }
-  66%  { transform: translate(-10px, 10px) scale(0.97); }
+
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  33% {
+    transform: translate(15px, -25px) scale(1.05);
+  }
+
+  66% {
+    transform: translate(-10px, 10px) scale(0.97);
+  }
 }
+
 @keyframes float-slower {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50%  { transform: translate(-20px, -15px) scale(1.03); }
+
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate(-20px, -15px) scale(1.03);
+  }
 }
 
 /* ── Divider glow ── */
-.divider-glow { position: relative; }
+.divider-glow {
+  position: relative;
+}
+
 .divider-glow::after {
   content: '';
   position: absolute;
   inset: -8px 15% -8px 15%;
-  background: radial-gradient(ellipse, rgba(139, 108, 255, 0.1) 0%, transparent 70%);
+  background: radial-gradient(ellipse, rgba(0, 102, 255, 0.15) 0%, transparent 70%);
   opacity: 0;
   transition: opacity 0.6s ease;
   pointer-events: none;
 }
-.divider-glow:hover::after { opacity: 1; }
+
+.divider-glow:hover::after {
+  opacity: 1;
+}
 
 /* ── Rainbow border shimmer ── */
 @keyframes border-rotate {
-  0%   { --angle: 0deg; }
-  100% { --angle: 360deg; }
+  0% {
+    --angle: 0deg;
+  }
+
+  100% {
+    --angle: 360deg;
+  }
 }
 
 @property --angle {
@@ -140,16 +229,14 @@ textarea.input-glow { resize: none; }
   inset: 0;
   border-radius: inherit;
   padding: 2px;
-  background: conic-gradient(
-    from var(--angle),
-    #8b6cff,
-    #ec4899,
-    #f97316,
-    #fbbf24,
-    #34d399,
-    #38bdf8,
-    #8b6cff
-  );
+  background: conic-gradient(from var(--angle),
+      #0066ff,
+      #0ea5e9,
+      #3b82f6,
+      #06b6d4,
+      #0ea5e9,
+      #3b82f6,
+      #0066ff);
   animation: border-rotate 4s linear infinite;
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
@@ -165,19 +252,22 @@ textarea.input-glow { resize: none; }
 
 /* ── Rainbow glow strip ── */
 @keyframes rainbow-slide {
-  0%   { background-position: 0% center; }
-  100% { background-position: 200% center; }
+  0% {
+    background-position: 0% center;
+  }
+
+  100% {
+    background-position: 200% center;
+  }
 }
 
 .rainbow-strip {
   position: relative;
   height: 2px;
   border-radius: 2px;
-  background: linear-gradient(
-    90deg,
-    #8b6cff, #ec4899, #f97316, #fbbf24, #34d399, #38bdf8, #8b6cff,
-    #ec4899, #f97316, #fbbf24, #34d399, #38bdf8, #8b6cff
-  );
+  background: linear-gradient(90deg,
+      #0066ff, #0ea5e9, #3b82f6, #06b6d4, #0ea5e9, #3b82f6, #0066ff,
+      #0ea5e9, #3b82f6, #06b6d4, #0ea5e9, #3b82f6, #0066ff);
   background-size: 200% auto;
   animation: rainbow-slide 4s linear infinite;
 }
@@ -187,16 +277,14 @@ textarea.input-glow { resize: none; }
   position: absolute;
   inset: -12px -5% -12px -5%;
   border-radius: 50%;
-  background: linear-gradient(
-    90deg,
-    rgba(139,108,255,0.25),
-    rgba(236,72,153,0.2),
-    rgba(249,115,22,0.2),
-    rgba(251,191,36,0.15),
-    rgba(52,211,153,0.2),
-    rgba(56,189,248,0.2),
-    rgba(139,108,255,0.25)
-  );
+  background: linear-gradient(90deg,
+      rgba(0, 102, 255, 0.3),
+      rgba(14, 165, 233, 0.3),
+      rgba(59, 130, 246, 0.2),
+      rgba(6, 182, 212, 0.2),
+      rgba(14, 165, 233, 0.3),
+      rgba(59, 130, 246, 0.2),
+      rgba(0, 102, 255, 0.3));
   background-size: 200% auto;
   animation: rainbow-slide 4s linear infinite;
   filter: blur(16px);

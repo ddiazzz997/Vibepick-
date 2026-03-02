@@ -2,12 +2,14 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Copy, Check, ChevronDown, ChevronUp } from 'lucide-react'
 import { countWords } from '../lib/generatePrompt'
+import { useLang } from '../lib/i18n'
 
 interface Props {
   prompt: string
 }
 
 export default function PromptOutput({ prompt }: Props) {
+  const { t } = useLang()
   const [copied, setCopied] = useState(false)
   const [expanded, setExpanded] = useState(false)
   const words = countWords(prompt)
@@ -24,9 +26,9 @@ export default function PromptOutput({ prompt }: Props) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <span className="w-1.5 h-1.5 rounded-full bg-green-400 pulse" />
-          <span className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-widest">Your prompt</span>
+          <span className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-widest">{t.yourPrompt}</span>
         </div>
-        <span className="text-xs font-mono text-[var(--text-muted)]">{words} words</span>
+        <span className="text-xs font-mono text-[var(--text-muted)]">{words} {t.words}</span>
       </div>
 
       {/* Preview box */}
@@ -64,7 +66,7 @@ export default function PromptOutput({ prompt }: Props) {
             transition-all duration-200 cursor-pointer"
         >
           {expanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
-          {expanded ? 'Collapse' : 'Expand'}
+          {expanded ? t.collapse : t.expand}
         </motion.button>
       </div>
 
@@ -78,7 +80,7 @@ export default function PromptOutput({ prompt }: Props) {
           cursor-pointer border-none transition-all duration-300
           ${copied
             ? 'bg-green-500/15 text-green-400 shadow-[0_0_30px_rgba(34,197,94,0.12)]'
-            : 'rainbow-border bg-white text-black shadow-[0_4px_30px_rgba(139,108,255,0.2)] hover:shadow-[0_6px_44px_rgba(139,108,255,0.35)] hover:brightness-105'
+            : 'rainbow-border bg-white text-black shadow-[0_4px_30px_rgba(0,102,255,0.2)] hover:shadow-[0_6px_44px_rgba(0,102,255,0.35)] hover:brightness-105'
           }
         `}
       >
@@ -87,10 +89,10 @@ export default function PromptOutput({ prompt }: Props) {
             <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 500 }}>
               <Check size={16} />
             </motion.span>
-            Copied — paste it into your AI builder
+            {t.copied}
           </>
         ) : (
-          <><Copy size={16} /> Copy Prompt</>
+          <><Copy size={16} /> {t.copyPrompt}</>
         )}
       </motion.button>
     </div>

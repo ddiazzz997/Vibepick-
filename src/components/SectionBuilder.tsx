@@ -6,23 +6,27 @@ import {
   Megaphone, PanelBottom, GripVertical, X, Plus,
   ChevronUp, ChevronDown,
 } from 'lucide-react'
+import { useLang } from '../lib/i18n'
 
-const sectionMeta: Record<string, { icon: React.ReactNode; desc: string }> = {
-  'Hero':           { icon: <Sparkles size={15} />,           desc: 'Headline, CTA & image' },
-  'Social Proof':   { icon: <Users size={15} />,              desc: 'Client logos & trust' },
-  'Features':       { icon: <LayoutGrid size={15} />,         desc: 'Benefits grid' },
-  'How It Works':   { icon: <ListOrdered size={15} />,        desc: '3-step process' },
-  'Testimonials':   { icon: <MessageSquareQuote size={15} />, desc: 'Customer reviews' },
-  'Pricing':        { icon: <DollarSign size={15} />,         desc: 'Plan comparison' },
-  'FAQ':            { icon: <HelpCircle size={15} />,         desc: 'Common questions' },
-  'Contact Form':   { icon: <Mail size={15} />,               desc: 'Get in touch' },
-  'Newsletter':     { icon: <Send size={15} />,               desc: 'Email signup' },
-  'Stats':          { icon: <BarChart3 size={15} />,          desc: 'Key numbers' },
-  'CTA Banner':     { icon: <Megaphone size={15} />,          desc: 'Final push' },
-  'Footer':         { icon: <PanelBottom size={15} />,        desc: 'Links & socials' },
+const ALL_SECTIONS = [
+  'Hero', 'Social Proof', 'Features', 'How It Works', 'Testimonials',
+  'Pricing', 'FAQ', 'Contact Form', 'Newsletter', 'Stats', 'CTA Banner', 'Footer',
+]
+
+const sectionIcons: Record<string, React.ReactNode> = {
+  'Hero': <Sparkles size={15} />,
+  'Social Proof': <Users size={15} />,
+  'Features': <LayoutGrid size={15} />,
+  'How It Works': <ListOrdered size={15} />,
+  'Testimonials': <MessageSquareQuote size={15} />,
+  'Pricing': <DollarSign size={15} />,
+  'FAQ': <HelpCircle size={15} />,
+  'Contact Form': <Mail size={15} />,
+  'Newsletter': <Send size={15} />,
+  'Stats': <BarChart3 size={15} />,
+  'CTA Banner': <Megaphone size={15} />,
+  'Footer': <PanelBottom size={15} />,
 }
-
-const ALL_SECTIONS = Object.keys(sectionMeta)
 
 interface Props {
   selected: string[]
@@ -30,6 +34,7 @@ interface Props {
 }
 
 export default function SectionBuilder({ selected, onChange }: Props) {
+  const { t } = useLang()
   const available = ALL_SECTIONS.filter((s) => !selected.includes(s))
 
   const moveItem = useCallback((from: number, to: number) => {
@@ -47,7 +52,7 @@ export default function SectionBuilder({ selected, onChange }: Props) {
         <div>
           <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-widest mb-3 flex items-center gap-2.5">
             <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 pulse" />
-            Your page — drag to reorder
+            {t.yourPage}
           </p>
           <Reorder.Group
             axis="y"
@@ -56,7 +61,8 @@ export default function SectionBuilder({ selected, onChange }: Props) {
             className="space-y-2 rounded-2xl bg-[var(--surface)] border border-[var(--border)] p-2.5 list-none m-0"
           >
             {selected.map((name, i) => {
-              const meta = sectionMeta[name] || { icon: <LayoutGrid size={15} />, desc: '' }
+              const icon = sectionIcons[name] || <LayoutGrid size={15} />
+              const desc = t.sectionMeta[name]?.desc || ''
               return (
                 <Reorder.Item
                   key={name}
@@ -66,7 +72,7 @@ export default function SectionBuilder({ selected, onChange }: Props) {
                   exit={{ opacity: 0, x: -20, scale: 0.95 }}
                   whileDrag={{
                     scale: 1.03,
-                    boxShadow: '0 8px 32px rgba(139,108,255,0.25)',
+                    boxShadow: '0 8px 32px rgba(0,102,255,0.25)',
                     zIndex: 50,
                   }}
                   transition={{ type: 'spring', stiffness: 450, damping: 30 }}
@@ -76,10 +82,10 @@ export default function SectionBuilder({ selected, onChange }: Props) {
                     hover:bg-[var(--surface-hover)] hover:border-[var(--border-hover)]"
                 >
                   <GripVertical size={14} className="text-[var(--text-dim)] shrink-0" />
-                  <span className="text-[var(--accent)] shrink-0">{meta.icon}</span>
+                  <span className="text-[var(--accent)] shrink-0">{icon}</span>
                   <div className="flex-1 min-w-0">
-                    <span className="text-[14px] font-semibold text-white">{name}</span>
-                    <span className="text-xs text-[var(--text-dim)] ml-2.5 hidden sm:inline">{meta.desc}</span>
+                    <span className="text-[14px] font-semibold text-white">{t.sectionNames[name] || name}</span>
+                    <span className="text-xs text-[var(--text-dim)] ml-2.5 hidden sm:inline">{desc}</span>
                   </div>
                   {/* Mobile up/down buttons */}
                   <div className="flex flex-col gap-0.5 sm:hidden shrink-0">
@@ -122,12 +128,12 @@ export default function SectionBuilder({ selected, onChange }: Props) {
       {available.length > 0 && (
         <div>
           <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-widest mb-3">
-            Add sections
+            {t.addSections}
           </p>
           <div className="flex flex-wrap gap-2.5">
             <AnimatePresence>
               {available.map((name, i) => {
-                const meta = sectionMeta[name] || { icon: <LayoutGrid size={15} />, desc: '' }
+                const icon = sectionIcons[name] || <LayoutGrid size={15} />
                 return (
                   <motion.button
                     key={name}
@@ -146,12 +152,12 @@ export default function SectionBuilder({ selected, onChange }: Props) {
                       bg-[var(--surface-raised)] border border-[var(--border)]
                       text-[var(--text-muted)] text-[13px] font-medium
                       hover:border-[var(--accent)]/40 hover:text-white hover:bg-[var(--surface-hover)]
-                      hover:shadow-[0_4px_20px_rgba(139,108,255,0.12)]
+                      hover:shadow-[0_4px_20px_rgba(0,102,255,0.12)]
                       transition-all cursor-pointer"
                   >
                     <Plus size={13} className="text-[var(--accent)]" />
-                    <span className="text-[var(--accent)]/70">{meta.icon}</span>
-                    {name}
+                    <span className="text-[var(--accent)]/70">{icon}</span>
+                    {t.sectionNames[name] || name}
                   </motion.button>
                 )
               })}
