@@ -56,19 +56,20 @@ body {
   color: #ffffff;
 }
 
-/* ── Inputs — really pop now ── */
+/* ── Inputs — Premium glow ── */
 .input-glow {
-  background: var(--input-bg);
-  border: 1.5px solid var(--border);
-  border-radius: 14px;
-  padding: 14px 18px;
+  background: rgba(11, 17, 32, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 16px 20px;
   font-size: 15px;
   line-height: 1.6;
   color: var(--text);
   width: 100%;
-  transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+  transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
   outline: none;
   font-family: 'JetBrains Mono', monospace;
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
 .input-glow::placeholder {
@@ -77,14 +78,15 @@ body {
 }
 
 .input-glow:hover {
-  border-color: var(--border-hover);
-  background: #0a0f1a;
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(11, 17, 32, 0.6);
+  box-shadow: 0 4px 20px rgba(0, 119, 255, 0.08), inset 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
 .input-glow:focus {
-  border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px var(--accent-soft), 0 0 40px rgba(0, 119, 255, 0.2);
-  background: #000000;
+  border-color: rgba(0, 119, 255, 0.4);
+  background: rgba(0, 0, 0, 0.6);
+  box-shadow: 0 0 0 1px rgba(0, 119, 255, 0.4), 0 8px 30px rgba(0, 119, 255, 0.15), inset 0 2px 10px rgba(0, 0, 0, 0.4);
 }
 
 textarea.input-glow {
@@ -93,15 +95,20 @@ textarea.input-glow {
 
 /* ── Glass Panels ── */
 .glass-panel {
-  background: rgba(6, 10, 18, 0.6);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(0, 119, 255, 0.15);
+  background: rgba(10, 15, 26, 0.4);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 20px;
-  padding: 32px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  padding: 36px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
   position: relative;
   z-index: 10;
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+}
+
+.glass-panel:hover {
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5), 0 0 40px rgba(0, 119, 255, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 /* ── Prompt scroll ── */
@@ -228,26 +235,30 @@ textarea.input-glow {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  padding: 2px;
+  padding: 1.5px;
   background: conic-gradient(from var(--angle),
-      #0066ff,
-      #0ea5e9,
-      #3b82f6,
-      #06b6d4,
-      #0ea5e9,
-      #3b82f6,
-      #0066ff);
-  animation: border-rotate 4s linear infinite;
+      rgba(0, 102, 255, 0.4),
+      rgba(255, 255, 255, 0.1),
+      rgba(0, 102, 255, 0.1),
+      rgba(255, 255, 255, 0.4),
+      rgba(0, 102, 255, 0.4));
+  animation: border-rotate 6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   z-index: -1;
-  opacity: 0.7;
-  transition: opacity 0.3s ease;
+  opacity: 0.8;
+  transition: opacity 0.4s ease;
 }
 
 .rainbow-border:hover::before {
   opacity: 1;
+  background: conic-gradient(from var(--angle),
+      rgba(0, 102, 255, 0.8),
+      rgba(255, 255, 255, 0.2),
+      rgba(0, 102, 255, 0.2),
+      rgba(255, 255, 255, 0.8),
+      rgba(0, 102, 255, 0.8));
 }
 
 /* ── Rainbow glow strip ── */

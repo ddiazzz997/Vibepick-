@@ -6,9 +6,10 @@ import { useLang } from '../lib/i18n'
 
 interface Props {
   prompt: string
+  onCopy?: () => void
 }
 
-export default function PromptOutput({ prompt }: Props) {
+export default function PromptOutput({ prompt, onCopy }: Props) {
   const { t } = useLang()
   const [copied, setCopied] = useState(false)
   const [expanded, setExpanded] = useState(false)
@@ -17,6 +18,7 @@ export default function PromptOutput({ prompt }: Props) {
   const handleCopy = async () => {
     await navigator.clipboard.writeText(prompt)
     setCopied(true)
+    onCopy?.()
     setTimeout(() => setCopied(false), 2500)
   }
 
@@ -32,7 +34,7 @@ export default function PromptOutput({ prompt }: Props) {
       </div>
 
       {/* Preview box */}
-      <div className="relative rounded-2xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.2)]">
+      <div className="relative rounded-2xl border border-[var(--border)] bg-[#03060d] overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.5),inset_0_2px_10px_rgba(0,0,0,0.4)]">
         <AnimatePresence initial={false}>
           <motion.div
             animate={{ height: expanded ? 'auto' : 160 }}
@@ -50,7 +52,7 @@ export default function PromptOutput({ prompt }: Props) {
 
         {/* Fade overlay */}
         {!expanded && (
-          <div className="absolute bottom-0 inset-x-0 h-20 bg-gradient-to-t from-[var(--surface)] to-transparent pointer-events-none" />
+          <div className="absolute bottom-0 inset-x-0 h-20 bg-gradient-to-t from-[#03060d] to-transparent pointer-events-none" />
         )}
 
         {/* Toggle */}
@@ -73,14 +75,14 @@ export default function PromptOutput({ prompt }: Props) {
       {/* Copy button */}
       <motion.button
         onClick={handleCopy}
-        whileHover={{ scale: 1.01, y: -2 }}
+        whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
         className={`
-          w-full py-4 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2.5
-          cursor-pointer border-none transition-all duration-300
+          w-full py-4 rounded-xl text-sm font-semibold flex items-center justify-center gap-2.5
+          cursor-pointer border transition-all duration-300
           ${copied
-            ? 'bg-green-500/15 text-green-400 shadow-[0_0_30px_rgba(34,197,94,0.12)]'
-            : 'rainbow-border bg-white text-black shadow-[0_4px_30px_rgba(0,102,255,0.2)] hover:shadow-[0_6px_44px_rgba(0,102,255,0.35)] hover:brightness-105'
+            ? 'bg-green-500/10 border-green-500/30 text-green-400 shadow-[0_0_30px_rgba(34,197,94,0.15)]'
+            : 'bg-white border-white text-black shadow-[0_4px_20px_rgba(255,255,255,0.15)] hover:shadow-[0_8px_30px_rgba(255,255,255,0.25)] hover:brightness-105'
           }
         `}
       >

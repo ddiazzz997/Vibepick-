@@ -41,7 +41,7 @@ export default function Logo({ className }: { className?: string }) {
             <span
                 className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white via-blue-50 to-white tracking-tight transition-all duration-500 group-hover:drop-shadow-[0_0_15px_rgba(0,119,255,0.4)]"
                 style={{
-                    fontSize: '1.5em',
+                    fontSize: 'max(1.2rem, 0.7em)',
                     lineHeight: 1
                 }}
             >

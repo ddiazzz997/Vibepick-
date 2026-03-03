@@ -19,25 +19,26 @@ export default function VibeCard({ label, selected, onClick, children }: VibeCar
         transition: { type: 'spring', stiffness: 400, damping: 18 },
       }}
       whileTap={{ scale: 0.96 }}
-      animate={selected ? { scale: [1, 1.04, 1] } : {}}
+      animate={selected ? { scale: [1, 1.02, 1] } : {}}
       transition={selected ? { duration: 0.35 } : undefined}
       className={`
         relative flex flex-col rounded-2xl overflow-hidden cursor-pointer text-left w-full
-        border-2 transition-all duration-300 group
+        border transition-all duration-400 group
         ${selected
-          ? 'border-[var(--accent)] shadow-[0_0_40px_rgba(0,102,255,0.25),0_0_80px_rgba(0,102,255,0.08)]'
-          : 'border-[var(--border)] hover:border-[var(--border-hover)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.4)]'
+          ? 'border-white/20 shadow-[0_0_20px_rgba(255,255,255,0.05),inset_0_1px_0_rgba(255,255,255,0.1)] bg-white/5'
+          : 'border-[var(--border)] bg-[var(--surface-raised)] hover:border-white/10 hover:shadow-[0_8px_32px_rgba(0,0,0,0.3)] hover:bg-[var(--surface-hover)]'
         }
       `}
     >
+      <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
       {selected && (
         <motion.div
           initial={{ scale: 0, opacity: 0, rotate: -90 }}
           animate={{ scale: 1, opacity: 1, rotate: 0 }}
           transition={{ type: 'spring', stiffness: 500, damping: 18 }}
-          className="absolute top-2.5 right-2.5 z-20 w-6 h-6 rounded-full bg-[var(--accent)] flex items-center justify-center shadow-[0_2px_16px_rgba(0,102,255,0.5)]"
+          className="absolute top-2.5 right-2.5 z-20 w-6 h-6 rounded-full bg-white flex items-center justify-center shadow-[0_2px_16px_rgba(255,255,255,0.2)]"
         >
-          <Check size={13} strokeWidth={3} className="text-white" />
+          <Check size={13} strokeWidth={3} className="text-black" />
         </motion.div>
       )}
 
@@ -55,10 +56,10 @@ export default function VibeCard({ label, selected, onClick, children }: VibeCar
 
       {/* Label */}
       <div className={`
-        px-3 py-2.5 text-center text-[13px] font-semibold transition-all duration-300
+        px-3 py-2.5 text-center text-[13px] font-medium transition-all duration-400
         ${selected
-          ? 'text-white bg-[var(--accent)]/10'
-          : 'text-[var(--text-muted)] bg-[var(--surface-raised)] group-hover:text-white group-hover:bg-[var(--surface-hover)]'
+          ? 'text-white'
+          : 'text-[var(--text-muted)] group-hover:text-white'
         }
       `}>
         {label}
