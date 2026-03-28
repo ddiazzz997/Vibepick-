@@ -9,7 +9,7 @@ interface AuthModalProps {
 
 export default function AuthModal({ onSuccess }: AuthModalProps) {
     const { signUp, signIn, showAuth, setShowAuth } = useAuth()
-    const { t } = useLang()
+    const { lang, t } = useLang()
 
     const [mode, setMode] = useState<'register' | 'login'>('register')
     const [firstName, setFirstName] = useState('')
@@ -21,6 +21,16 @@ export default function AuthModal({ onSuccess }: AuthModalProps) {
     const [loading, setLoading] = useState(false)
     const [success, setSuccess] = useState(false)
 
+    // Translate common Supabase errors into friendly language
+    const getFriendlyError = (err: string) => {
+        const lowerErr = err.toLowerCase()
+        if (lowerErr.includes('invalid login credentials')) return lang === 'es' ? 'Correo o contraseña incorrectos' : 'Invalid email or password'
+        if (lowerErr.includes('user already registered')) return lang === 'es' ? 'Este correo ya tiene una cuenta. Intenta ingresar.' : 'This email is already registered.'
+        if (lowerErr.includes('password should be at least 6 characters')) return lang === 'es' ? 'La contraseña debe tener al menos 6 caracteres' : 'Password must be at least 6 characters'
+        if (lowerErr.includes('email rate limit exceeded')) return lang === 'es' ? 'Demasiados intentos. Intenta más tarde.' : 'Too many attempts. Try again later.'
+        return err
+    }
+
     if (!showAuth) return null
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -31,7 +41,7 @@ export default function AuthModal({ onSuccess }: AuthModalProps) {
         if (mode === 'register') {
             const res = await signUp(email, password, { first_name: firstName, last_name: lastName, phone })
             if (res.error) {
-                setError(res.error)
+                setError(getFriendlyError(res.error))
                 setLoading(false)
             } else {
                 setSuccess(true)
@@ -43,7 +53,7 @@ export default function AuthModal({ onSuccess }: AuthModalProps) {
         } else {
             const res = await signIn(email, password)
             if (res.error) {
-                setError(res.error)
+                setError(getFriendlyError(res.error))
                 setLoading(false)
             } else {
                 setShowAuth(false)

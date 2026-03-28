@@ -9,21 +9,21 @@ type Lang = 'en' | 'es'
 const translations = {
     en: {
         // Welcome Screen
-        welcomeTitle1: 'Build your',
-        welcomeTitle2: 'Website',
-        welcomeSubtitle: 'Generate agency-level prompts for high-converting websites. Powered by AI.',
-        welcomeCTA: '🚀 Try it Free Now',
+        welcomeTitle1: 'Your professional website',
+        welcomeTitle2: 'ready today',
+        welcomeSubtitle: 'Forget the stress of designing from scratch or paying thousands to an agency. Just tell us what your business is about: think it, write it, and launch your website in minutes.',
+        welcomeCTA: 'Build my site in 2 minutes',
         welcomeCTALogin: 'Already have an account? Log in',
 
         // Auth
-        authRegister: 'Sign Up',
+        authRegister: 'Start Free',
         authLogin: 'Log In',
         authFirstName: 'First name',
         authLastName: 'Last name',
-        authPhone: 'Phone number',
+        authPhone: 'WhatsApp number',
         authEmail: 'Email',
-        authPassword: 'Password',
-        authRegisterBtn: 'Create Free Account',
+        authPassword: 'Password (min. 6 chars)',
+        authRegisterBtn: 'Create Account & Start',
         authLoginBtn: 'Log In',
         authHaveAccount: 'Already have an account?',
         authNoAccount: "Don't have an account?",
@@ -33,19 +33,19 @@ const translations = {
         authGreeting: 'Hi',
 
         // Problem Section
-        problemTitle1: 'Your competition already has their website.',
-        problemTitle2: 'Are you still "thinking about it"?',
-        problemBody1: 'Every day without a professional website, you lose clients who end up buying from someone else. Not because you\'re worse. But because they can\'t find you.',
-        problemBody2: 'Agencies know this. That\'s why they charge $2,000 to $5,000 for a site you could have ready in the next 5 minutes.',
+        problemTitle1: 'Building a website used to be a nightmare.',
+        problemTitle2: 'But your competition already has theirs.',
+        problemBody1: 'You face complicated builders where nothing fits, or you resign yourself to paying $3,000 to an agency that will take weeks. Meanwhile, you keep losing clients online.',
+        problemBody2: 'What if you could skip the boring part? Straight to the final result: a page that looks incredible and brings clients on autopilot.',
 
         // Benefits
-        benefitsTag: 'Why Vibepick Works',
-        benefitsTitle: 'Results that speak for themselves',
+        benefitsTag: 'Why it works',
+        benefitsTitle: 'From your idea to the screen, no middlemen',
         benefitsItems: [
-            { title: 'Websites that turn visitors into buyers', desc: 'Vibepick doesn\'t generate pretty websites. It generates websites that sell. Every prompt is designed with conversion principles that transform curious visitors into real customers.' },
-            { title: 'Designed for YOUR business, not just anyone', desc: 'When you describe your business, Vibepick analyzes your niche, your audience and your style to create something only you could have. No templates. No generics.' },
-            { title: 'The same technology top agencies use', desc: 'The best digital agencies already use AI to design high-performance websites. The difference is they charge thousands. You do it yourself, now.' },
-            { title: 'In 2 minutes, not 2 months', desc: 'While others spend weeks waiting for sketches and quotes, you already have your prompt ready to copy and paste. The time you save is worth more than any investment.' },
+            { title: 'Zero technical barriers', desc: 'You don\'t need to learn about margins, colors, or servers. If you can describe what you do, you already have everything you need for a high-level page.' },
+            { title: 'Designed to make cash', desc: 'A website that doesn\'t sell is just an expensive digital brochure. We give you the exact structure so your visitors go from looking to buying immediately.' },
+            { title: 'Your business running in minutes', desc: 'Think it, type it into our system, copy the result, and launch it. Go from "I don\'t have a page" to "here is my link" in the same afternoon.' },
+            { title: 'Top tier agency technology', desc: 'The best digital agencies already use AI to design high-performance websites. The difference is they charge thousands. Here you have the same engine, but you do it yourself.' },
         ],
 
         // Why Vibepick
@@ -165,6 +165,10 @@ const translations = {
         expand: 'Expand',
         copied: 'Copied — paste it into your AI builder',
         copyPrompt: 'Copy Prompt',
+        downloadZip: 'Download Project (ZIP)',
+        unlockPremium: 'Unlock Premium Strategy 🔒',
+        premiumLockedMsg: 'You reached your free limit. To copy the high-conversion framework and export your images, please upgrade.',
+        unlockPowerFull: 'Unlock the full power: Downloading the ZIP gives you this ultra-optimized prompt alongside all your uploaded images. Drop it into any AI code developer and watch the AI magically make your website ready for you, respecting 100% of your visual identity.',
 
         // Bottom section
         pasteInto: 'Paste into',
@@ -173,47 +177,48 @@ const translations = {
         requestAdvisory: 'Request 1:1 Advisory',
         madeBy: 'Made with',
         byDaniel: 'by Daniel Díaz',
+        followUs: 'Follow us on social media for more value:',
     },
 
     es: {
         // Welcome Screen
-        welcomeTitle1: 'Crea tu',
-        welcomeTitle2: 'Sitio Web',
-        welcomeSubtitle: 'Genera prompts de nivel agencia para crear sitios web que convierten. Impulsado por inteligencia artificial.',
-        welcomeCTA: '🚀 Pruébalo Gratis Ahora',
+        welcomeTitle1: 'Tu sitio web profesional',
+        welcomeTitle2: 'listo hoy mismo',
+        welcomeSubtitle: 'Olvídate del estrés de diseñar desde cero o pagar miles a una agencia. Solo cuéntanos de qué va tu negocio: piénsalo, escríbelo y lanza tu sitio web en cuestión de minutos.',
+        welcomeCTA: 'Crear mi sitio en 2 minutos',
         welcomeCTALogin: '¿Ya tienes cuenta? Inicia sesión',
 
         // Auth
-        authRegister: 'Registrarse',
-        authLogin: 'Iniciar Sesión',
-        authFirstName: 'Nombre',
-        authLastName: 'Apellido',
-        authPhone: 'Teléfono',
+        authRegister: 'Empezar Gratis',
+        authLogin: 'Entrar',
+        authFirstName: '¿Cuál es tu nombre?',
+        authLastName: 'Tu apellido',
+        authPhone: 'Número de WhatsApp',
         authEmail: 'Correo electrónico',
-        authPassword: 'Contraseña',
-        authRegisterBtn: 'Crear Cuenta Gratis',
-        authLoginBtn: 'Iniciar Sesión',
-        authHaveAccount: '¿Ya tienes cuenta?',
-        authNoAccount: '¿No tienes cuenta?',
+        authPassword: 'Crea una contraseña (mín. 6 letras/números)',
+        authRegisterBtn: 'Crear cuenta y empezar',
+        authLoginBtn: 'Ingresar a mi cuenta',
+        authHaveAccount: '¿Ya tienes una cuenta?',
+        authNoAccount: '¿Es tu primera vez aquí?',
         authSuccessTitle: '¡Bienvenido a Vibepick!',
         authSuccessSub: 'Tu cuenta está lista. Vamos a crear tu primer sitio web.',
         authLogout: 'Cerrar sesión',
         authGreeting: 'Hola',
 
         // Problem Section
-        problemTitle1: 'Tu competencia ya tiene su sitio web.',
-        problemTitle2: '¿Tú sigues "pensándolo"?',
-        problemBody1: 'Cada día sin un sitio web profesional, pierdes clientes que terminan comprándole a alguien más. No porque seas peor. Sino porque no te encuentran.',
-        problemBody2: 'Las agencias lo saben. Por eso cobran $2,000 a $5,000 USD por un sitio que podrías tener listo en los próximos 5 minutos.',
+        problemTitle1: 'Hacer una página web solía ser una pesadilla.',
+        problemTitle2: 'Pero tu competencia ya tiene la suya.',
+        problemBody1: 'Te enfrentas a constructores complicados donde nada cuadra, o te resignas a pagarle $3,000 USD a una agencia que tardará semanas. Mientras tanto, sigues perdiendo clientes en internet.',
+        problemBody2: '¿Y si pudieras saltarte la parte aburrida? Directo al resultado final: una página que se ve increíble y trae clientes en automático.',
 
         // Benefits
         benefitsTag: 'Por qué funciona',
-        benefitsTitle: 'Resultados que hablan por sí solos',
+        benefitsTitle: 'De la idea a tu pantalla, sin intermediarios',
         benefitsItems: [
-            { title: 'Sitios que convierten visitantes en compradores', desc: 'Vibepick no genera sitios bonitos. Genera sitios que venden. Cada prompt está diseñado con principios de conversión que transforman curiosos en clientes reales.' },
-            { title: 'Diseñado para TU negocio, no para cualquiera', desc: 'Cuando describes tu negocio, Vibepick analiza tu nicho, tu audiencia y tu estilo para crear algo que solo tú podrías tener. No plantillas. No genéricos.' },
-            { title: 'La misma tecnología que usan las agencias top', desc: 'Las mejores agencias digitales ya usan IA para diseñar sitios de alto rendimiento. La diferencia es que ellas cobran miles. Tú lo haces tú mismo, ahora.' },
-            { title: 'En 2 minutos, no en 2 meses', desc: 'Mientras otros pasan semanas esperando bocetos y presupuestos, tú ya tienes tu prompt listo para copiar y pegar. El tiempo que ahorras vale más que cualquier inversión.' },
+            { title: 'Cero barrera técnica', desc: 'No necesitas aprender sobre márgenes, colores o servidores. Si sabes describir a qué te dedicas, ya tienes todo lo necesario para tener una página de alto nivel.' },
+            { title: 'Diseñado para hacer caja', desc: 'Una página web que no vende es solo un folleto digital caro. Te entregamos la estructura exacta para que tus visitantes pasen de mirar a comprar inmediatamente.' },
+            { title: 'Tu negocio funcionando en minutos', desc: 'Piénsalo, escríbelo en nuestro sistema, copia el resultado y lánzalo. Pasa de "no tengo página" a "aquí está mi enlace" en la misma tarde.' },
+            { title: 'Tecnología de agencia top', desc: 'Las mejores agencias digitales ya usan IA para diseñar sitios de alto rendimiento. La diferencia es que ellas cobran miles. Aquí tienes el mismo motor, pero lo haces tú mismo.' },
         ],
 
         // Why Vibepick
@@ -333,6 +338,10 @@ const translations = {
         expand: 'Expandir',
         copied: 'Copiado — pégalo en tu constructor de IA',
         copyPrompt: 'Copiar Prompt',
+        downloadZip: 'Descargar Proyecto (ZIP)',
+        unlockPremium: 'Desbloquear Estrategia Premium 🔒',
+        premiumLockedMsg: 'Alcanzaste el límite gratuito. Para copiar la estructura de conversión de alto rendimiento y exportar imágenes, adquiere Ilimitado.',
+        unlockPowerFull: 'Desbloquea el poder total: Al descargar el Proyecto ZIP, obtendrás este prompt ultra-optimizado junto a todas las imágenes y logos que subiste. Sube este archivo ZIP directamente a cualquiera de los desarrolladores de código con IA y observa cómo la IA, por arte de magia, hace tu sitio web listo para ti respetando al 100% tu identidad visual.',
 
         // Bottom section
         pasteInto: 'Pégalo en',
@@ -341,6 +350,7 @@ const translations = {
         requestAdvisory: 'Solicitar Asesoría 1:1',
         madeBy: 'Hecho con',
         byDaniel: 'por Daniel Díaz',
+        followUs: 'Síguenos en nuestras redes sociales para más valor:',
     },
 }
 

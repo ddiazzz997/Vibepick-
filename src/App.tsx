@@ -17,9 +17,10 @@ import AuthModal from './components/AuthModal'
 import ProblemSection from './components/ProblemSection'
 import BenefitsSection from './components/BenefitsSection'
 import WhyVibepick from './components/WhyVibepick'
+import HowItWorks from './components/HowItWorks'
 import FAQ from './components/FAQ'
 import PaywallModal from './components/PaywallModal'
-
+import { AIFieldAssistant } from './components/AIFieldAssistant'
 /* ── Animation variants ── */
 const sectionVariants = {
   hidden: { opacity: 0, y: 28, filter: 'blur(6px)' },
@@ -66,11 +67,27 @@ export default function App() {
   const [niche, setNiche] = useState('')
   const [customNiche, setCustomNiche] = useState('')
   const [vibe, setVibe] = useState<string | null>(null)
+  const [customVibe, setCustomVibe] = useState('')
+  const vibeSuggestions = ['Vibrante', 'Neón', 'Minimalista', 'Cálido', 'Tecnológico', 'Elegante', 'Futurista', 'Orgánico']
   const [sections, setSections] = useState<string[]>(['Hero', 'Social Proof', 'Features', 'Footer'])
   const [cta, setCta] = useState('')
+  // Step 6 — Contact & Socials
+  const [whatsappCode, setWhatsappCode] = useState('+1')
+  const [whatsappNumber, setWhatsappNumber] = useState('')
+  const [instagram, setInstagram] = useState('')
+  const [facebook, setFacebook] = useState('')
+  const [tiktok, setTiktok] = useState('')
+  // Step 7 — Site Language
+  const [siteLang, setSiteLang] = useState('Español')
+  // Step 8 — Asset Uploads
+  const [logoAnnotation, setLogoAnnotation] = useState('')
+  const [clientLogos, setClientLogos] = useState<Array<{ dataUrl: string; annotation: string }>>([])
+  const [assets, setAssets] = useState<Array<{ dataUrl: string; annotation: string }>>([])
+  const [inspirations, setInspirations] = useState<Array<{ dataUrl: string; annotation: string }>>([])
 
   const formRef = useRef<HTMLDivElement>(null)
   const effectiveNiche = customNiche || niche
+  const effectiveVibe = customVibe || vibe
 
   const vibes = [
     { id: 'clean', label: t.vibes[0].label, mockup: <CleanMockup /> },
@@ -86,13 +103,41 @@ export default function App() {
       generatePrompt({
         description: desc + (effectiveNiche ? ` (${effectiveNiche})` : ''),
         niche: effectiveNiche,
-        vibe,
+        vibe: effectiveVibe,
         sections,
         cta,
         lang,
+        siteLang: siteLang || undefined,
+        whatsapp: whatsappNumber ? whatsappCode.replace('+', '') + whatsappNumber : undefined,
+        instagram: instagram || undefined,
+        facebook: facebook || undefined,
+        tiktok: tiktok || undefined,
+        logoAnnotation: logoAnnotation || undefined,
+        clientLogos,
+        assets,
+        inspirations,
       }),
-    [desc, effectiveNiche, vibe, sections, cta, lang],
+    [desc, effectiveNiche, effectiveVibe, sections, cta, lang, siteLang, whatsappCode, whatsappNumber, instagram, facebook, tiktok, logoAnnotation, clientLogos, assets, inspirations],
   )
+
+  /* Handle image paste */
+  const handlePasteImage = useCallback((callback: (dataUrl: string) => void) => (e: React.ClipboardEvent) => {
+    const items = e.clipboardData.items;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        const file = items[i].getAsFile();
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            const dataUrl = ev.target?.result as string;
+            callback(dataUrl);
+          };
+          reader.readAsDataURL(file);
+          e.preventDefault();
+        }
+      }
+    }
+  }, []);
 
   /* Handle auth success → go to platform */
   const handleAuthSuccess = useCallback(() => {
@@ -109,14 +154,46 @@ export default function App() {
   }, [user, setShowAuth])
 
   /* Handle prompt copy → check usage */
+  const isLocked = Boolean(user && profile && !profile.is_pro && profile.prompt_count >= 2)
+
   const handlePromptCopy = useCallback(async () => {
-    if (!user || !profile) return
-    if (profile.is_pro) return
-    const newCount = await incrementPromptCount()
-    if (newCount >= 2) {
-      setShowPaywall(true)
-    }
+    if (!user || !profile || profile.is_pro) return
+    await incrementPromptCount()
   }, [user, profile, incrementPromptCount])
+
+  const handleExportZip = useCallback(async () => {
+    try {
+      const JSZip = (await import('jszip')).default
+      const fileSaver = await import('file-saver')
+      const saveAs = fileSaver.saveAs || fileSaver.default?.saveAs || fileSaver.default
+
+      const zip = new JSZip()
+      zip.file('1_prompt_vibepick.txt', prompt)
+
+      const addImage = (dataUrl: string, filename: string) => {
+        if (!dataUrl || !dataUrl.startsWith('data:')) return
+        const arr = dataUrl.split(',')
+        if (arr.length < 2) return
+        const b64 = arr[1]
+        const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/png'
+        const ext = mime.split('/')[1] || 'png'
+        zip.file(`${filename}.${ext}`, b64, { base64: true })
+      }
+
+      addImage(logoAnnotation, '2_logo')
+      clientLogos.forEach((c, i) => addImage(c.dataUrl, `3_client_logo_${i + 1}`))
+      assets.forEach((a, i) => addImage(a.dataUrl, `4_asset_${i + 1}`))
+      inspirations.forEach((insp, i) => addImage(insp.dataUrl, `5_inspiration_${i + 1}`))
+
+      const blob = await zip.generateAsync({ type: 'blob' })
+      saveAs(blob, `vibepick_project_${new Date().getTime()}.zip`)
+
+      if (!user || !profile || profile.is_pro) return
+      await incrementPromptCount()
+    } catch (err) {
+      console.error('Error generating zip', err)
+    }
+  }, [prompt, logoAnnotation, clientLogos, assets, user, profile, incrementPromptCount])
 
   if (isLoading) return null
 
@@ -224,6 +301,7 @@ export default function App() {
                   <motion.section variants={sectionVariants} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-40px' }} transition={{ duration: 0.55 }} className="glass-panel">
                     <Step n={1} title={t.step1Title} />
                     <textarea value={desc} onChange={(e) => setDesc(e.target.value)} placeholder={t.step1Placeholder} rows={3} className="input-glow" />
+                    <AIFieldAssistant fieldType="description" contextData={{ niche: effectiveNiche, vibe: effectiveVibe || '' }} onSelect={setDesc} language={lang} />
                   </motion.section>
 
                   {/* 2 — Niche */}
@@ -257,10 +335,36 @@ export default function App() {
                   {/* 3 — Vibe */}
                   <motion.section variants={sectionVariants} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-40px' }} transition={{ duration: 0.55 }} className="glass-panel">
                     <Step n={3} title={t.step3Title} sub={t.step3Sub} />
+
+                    {/* Custom Vibe Bubbles */}
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {vibeSuggestions.map((sug) => (
+                        <button
+                          key={sug}
+                          onClick={() => {
+                            const newVibe = customVibe ? `${customVibe}, ${sug}` : sug
+                            setCustomVibe(newVibe)
+                            setVibe(null)
+                          }}
+                          className="px-3 py-1 text-[11px] font-medium tracking-wider uppercase rounded-full border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 text-white/70 hover:text-white transition-all duration-200 cursor-pointer"
+                        >
+                          + {sug}
+                        </button>
+                      ))}
+                    </div>
+                    <input
+                      type="text"
+                      value={customVibe}
+                      onChange={(e) => { setCustomVibe(e.target.value); setVibe(null) }}
+                      placeholder={lang === 'es' ? 'O escribe tu estilo: ej. vibrante, cálido, tecnológico y neón...' : 'Or type your style: e.g. vibrant, warm, tech, neon...'}
+                      className="input-glow mb-2"
+                    />
+                    <AIFieldAssistant fieldType="brandVoice" contextData={{ description: desc, niche: effectiveNiche }} onSelect={(v) => { setCustomVibe(v); setVibe(null) }} language={lang} />
+
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       {vibes.map((v, i) => (
                         <motion.div key={v.id} initial={{ opacity: 0, y: 20, scale: 0.92 }} whileInView={{ opacity: 1, y: 0, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.4, delay: 0.07 * i, ease: [0.25, 0.1, 0.25, 1] }}>
-                          <VibeCard id={v.id} label={v.label} selected={vibe === v.id} onClick={() => setVibe(v.id)}>
+                          <VibeCard id={v.id} label={v.label} selected={vibe === v.id && !customVibe} onClick={() => { setVibe(v.id); setCustomVibe('') }}>
                             {v.mockup}
                           </VibeCard>
                         </motion.div>
@@ -278,11 +382,361 @@ export default function App() {
                   <motion.section variants={sectionVariants} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-40px' }} transition={{ duration: 0.55 }} className="glass-panel">
                     <Step n={5} title={t.step5Title} sub={t.step5Sub} />
                     <input type="text" value={cta} onChange={(e) => setCta(e.target.value)} placeholder={t.step5Placeholder} className="input-glow" />
+                    <AIFieldAssistant fieldType="offer" contextData={{ description: desc, niche: effectiveNiche }} onSelect={setCta} language={lang} />
+                  </motion.section>
+
+                  {/* 6 — Contact & Socials */}
+                  <motion.section variants={sectionVariants} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-40px' }} transition={{ duration: 0.55 }} className="glass-panel">
+                    <Step n={6} title={lang === 'es' ? 'Contacto y Redes Sociales' : 'Contact & Social Media'} sub={lang === 'es' ? 'Los enlaces se generarán funcionales y con los logos originales de cada red.' : 'Links will be generated functional with each network\'s original logos.'} />
+                    <div className="flex flex-col gap-2.5">
+
+                      {/* WhatsApp */}
+                      <motion.div whileHover={{ scale: 1.01 }} className="flex items-center gap-0 rounded-xl border border-[var(--border)] overflow-hidden bg-[#25D366]/5 hover:border-[#25D366]/40 transition-colors duration-200" style={{ borderLeft: '3px solid #25D366' }}>
+                        <div className="flex items-center justify-center w-14 h-14 shrink-0" style={{ background: 'rgba(37,211,102,0.08)' }}>
+                          <svg width="26" height="26" viewBox="0 0 24 24" fill="#25D366" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
+                            <path d="M12 2C6.486 2 2 6.486 2 12c0 1.89.518 3.656 1.416 5.168L2 22l4.932-1.391A9.944 9.944 0 0012 22c5.514 0 10-4.486 10-10S17.514 2 12 2zm0 18c-1.71 0-3.306-.45-4.688-1.234l-.336-.2-3.478.98.939-3.39-.222-.347A7.947 7.947 0 014 12c0-4.411 3.589-8 8-8s8 3.589 8 8-3.589 8-8 8z" />
+                          </svg>
+                        </div>
+                        <div className="flex-1 pr-3">
+                          <p className="text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: '#25D366' }}>WhatsApp</p>
+                          <div className="flex items-center gap-1">
+                            {/* Country code */}
+                            <select
+                              value={whatsappCode}
+                              onChange={(e) => setWhatsappCode(e.target.value)}
+                              className="bg-[#25D366]/10 border border-[#25D366]/20 rounded-lg text-xs text-white font-mono px-1.5 py-1 outline-none cursor-pointer"
+                              style={{ minWidth: '78px' }}
+                            >
+                              {[
+                                { c: '+1', f: '🇺🇸' }, { c: '+52', f: '🇲🇽' }, { c: '+57', f: '🇨🇴' },
+                                { c: '+54', f: '🇦🇷' }, { c: '+55', f: '🇧🇷' }, { c: '+56', f: '🇨🇱' },
+                                { c: '+51', f: '🇵🇪' }, { c: '+593', f: '🇪🇨' }, { c: '+58', f: '🇻🇪' },
+                                { c: '+34', f: '🇪🇸' }, { c: '+44', f: '🇬🇧' }, { c: '+49', f: '🇩🇪' },
+                                { c: '+33', f: '🇫🇷' }, { c: '+39', f: '🇮🇹' }, { c: '+81', f: '🇯🇵' },
+                                { c: '+86', f: '🇨🇳' }
+                              ].map(({ c, f }) => (
+                                <option key={c} value={c} className="bg-[#0a0e1a]">{f} {c}</option>
+                              ))}
+                            </select>
+                            <input
+                              type="tel"
+                              value={whatsappNumber}
+                              onChange={(e) => setWhatsappNumber(e.target.value.replace(/\D/g, ''))}
+                              placeholder={lang === 'es' ? 'Número local (ej: 3001234567)' : 'Local number (e.g. 3051234567)'}
+                              className="flex-1 bg-transparent text-sm text-white placeholder-[var(--text-dim)] outline-none border-none font-mono"
+                            />
+                          </div>
+                        </div>
+                      </motion.div>
+
+
+                      {/* Instagram */}
+                      <motion.div whileHover={{ scale: 1.01 }} className="flex items-center gap-0 rounded-xl border border-[var(--border)] overflow-hidden bg-[#E1306C]/5 hover:border-[#E1306C]/40 transition-colors duration-200" style={{ borderLeft: '3px solid #E1306C' }}>
+                        <div className="flex items-center justify-center w-14 h-14 shrink-0" style={{ background: 'rgba(225,48,108,0.08)' }}>
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                              <linearGradient id="ig-grad" x1="0" y1="24" x2="24" y2="0" gradientUnits="userSpaceOnUse">
+                                <stop offset="0%" stopColor="#f09433" />
+                                <stop offset="25%" stopColor="#e6683c" />
+                                <stop offset="50%" stopColor="#dc2743" />
+                                <stop offset="75%" stopColor="#cc2366" />
+                                <stop offset="100%" stopColor="#bc1888" />
+                              </linearGradient>
+                            </defs>
+                            <rect x="2" y="2" width="20" height="20" rx="5.5" stroke="url(#ig-grad)" strokeWidth="1.8" fill="none" />
+                            <circle cx="12" cy="12" r="4.2" stroke="url(#ig-grad)" strokeWidth="1.8" fill="none" />
+                            <circle cx="17.5" cy="6.5" r="1.1" fill="url(#ig-grad)" />
+                          </svg>
+                        </div>
+                        <div className="flex-1 pr-3">
+                          <p className="text-[10px] font-semibold uppercase tracking-widest mb-0.5" style={{ color: '#E1306C' }}>Instagram</p>
+                          <input
+                            type="url"
+                            value={instagram}
+                            onChange={(e) => setInstagram(e.target.value)}
+                            placeholder="https://instagram.com/tu_perfil"
+                            className="w-full bg-transparent text-sm text-white placeholder-[var(--text-dim)] outline-none border-none"
+                          />
+                        </div>
+                      </motion.div>
+
+                      {/* Facebook */}
+                      <motion.div whileHover={{ scale: 1.01 }} className="flex items-center gap-0 rounded-xl border border-[var(--border)] overflow-hidden bg-[#1877F2]/5 hover:border-[#1877F2]/40 transition-colors duration-200" style={{ borderLeft: '3px solid #1877F2' }}>
+                        <div className="flex items-center justify-center w-14 h-14 shrink-0" style={{ background: 'rgba(24,119,242,0.08)' }}>
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="#1877F2" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.413c0-3.024 1.792-4.697 4.533-4.697 1.312 0 2.686.235 2.686.235v2.97h-1.514c-1.491 0-1.956.93-1.956 1.874v2.278h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z" />
+                          </svg>
+                        </div>
+                        <div className="flex-1 pr-3">
+                          <p className="text-[10px] font-semibold uppercase tracking-widest mb-0.5" style={{ color: '#1877F2' }}>Facebook</p>
+                          <input
+                            type="url"
+                            value={facebook}
+                            onChange={(e) => setFacebook(e.target.value)}
+                            placeholder="https://facebook.com/tu_pagina"
+                            className="w-full bg-transparent text-sm text-white placeholder-[var(--text-dim)] outline-none border-none"
+                          />
+                        </div>
+                      </motion.div>
+
+                      {/* TikTok */}
+                      <motion.div whileHover={{ scale: 1.01 }} className="flex items-center gap-0 rounded-xl border border-[var(--border)] overflow-hidden bg-white/5 hover:border-white/20 transition-colors duration-200" style={{ borderLeft: '3px solid #ffffff' }}>
+                        <div className="flex items-center justify-center w-14 h-14 shrink-0" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                          <svg width="22" height="22" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.32 6.32 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.75a4.85 4.85 0 01-1.01-.06z" />
+                          </svg>
+                        </div>
+                        <div className="flex-1 pr-3">
+                          <p className="text-[10px] font-semibold uppercase tracking-widest mb-0.5 text-white/60">TikTok</p>
+                          <input
+                            type="url"
+                            value={tiktok}
+                            onChange={(e) => setTiktok(e.target.value)}
+                            placeholder="https://tiktok.com/@tu_usuario"
+                            className="w-full bg-transparent text-sm text-white placeholder-[var(--text-dim)] outline-none border-none"
+                          />
+                        </div>
+                      </motion.div>
+
+                    </div>
+                  </motion.section>
+
+
+                  {/* 7 — Site Language */}
+                  <motion.section variants={sectionVariants} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-40px' }} transition={{ duration: 0.55 }} className="glass-panel">
+                    <Step n={7} title={lang === 'es' ? 'Idioma del sitio web' : 'Website Language'} sub={lang === 'es' ? '¿En qué idioma se generará todo el contenido del sitio?' : 'In what language should the entire site content be generated?'} />
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
+                      {['Español', 'English', 'Portuguese', 'French', 'Italian', 'German'].map((l) => (
+                        <motion.button key={l} onClick={() => { setSiteLang(l) }}
+                          whileHover={{ y: -2, scale: 1.03 }} whileTap={{ scale: 0.95 }}
+                          className={`px-4 py-2.5 rounded-xl border text-sm font-medium cursor-pointer transition-all duration-200
+                            ${siteLang === l ? 'bg-white/10 border-white/20 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]' : 'bg-[var(--surface-raised)] border-[var(--border)] text-[var(--text-muted)] hover:text-white hover:border-[var(--border-hover)]'}`}>
+                          {l}
+                        </motion.button>
+                      ))}
+                    </div>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={['Español', 'English', 'Portuguese', 'French', 'Italian', 'German'].includes(siteLang) ? '' : siteLang}
+                        onChange={(e) => setSiteLang(e.target.value)}
+                        placeholder={lang === 'es' ? 'Otro idioma (ej: Catalan, Japanese, Arabic…)' : 'Other language (e.g. Catalan, Japanese, Arabic…)'}
+                        className="input-glow text-sm"
+                      />
+                    </div>
+                  </motion.section>
+
+                  {/* 8 — Asset Uploads */}
+                  <motion.section variants={sectionVariants} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-40px' }} transition={{ duration: 0.55 }} className="glass-panel">
+                    <Step n={8} title={lang === 'es' ? 'Tus Recursos Visuales' : 'Your Visual Assets'} sub={lang === 'es' ? 'Sube tu logo e imágenes + descríbelas. El prompt incluirá las anotaciones para que el IA sepa cómo usarlas.' : 'Upload your logo and images + describe them. The prompt will include annotations so the AI knows how to use them.'} />
+                    <div className="flex flex-col gap-5">
+
+                      {/* Logo */}
+                      <div>
+                        <p className="text-xs text-[var(--text-muted)] mb-2 font-medium">{lang === 'es' ? '🎨 Logo' : '🎨 Logo'}</p>
+                        <label className="flex items-center gap-3 cursor-pointer mb-2">
+                          <span className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-medium transition-all duration-200 ${logoAnnotation && logoAnnotation.startsWith('data:') ? 'border-green-500/40 bg-green-500/10 text-green-400' : 'border-[var(--border)] bg-[var(--surface-raised)] text-[var(--text-muted)] hover:text-white hover:border-[var(--border-hover)]'
+                            }`}>
+                            📤 {logoAnnotation && logoAnnotation.startsWith('data:') ? (lang === 'es' ? 'Logo cargado ✓' : 'Logo loaded ✓') : (lang === 'es' ? 'Subir logo' : 'Upload logo')}
+                          </span>
+                          <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            if (!file) return
+                            const reader = new FileReader()
+                            reader.onload = (ev) => {
+                              const dataUrl = ev.target?.result as string
+                              setLogoAnnotation(dataUrl)
+                            }
+                            reader.readAsDataURL(file)
+                          }} />
+                        </label>
+                        {logoAnnotation && logoAnnotation.startsWith('data:') && (
+                          <div className="relative mb-2 inline-block">
+                            <img src={logoAnnotation} alt="Logo" className="h-16 w-auto rounded-lg border border-[var(--border)] object-contain bg-white/5 p-1" />
+                            <button onClick={() => setLogoAnnotation('')} className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center cursor-pointer border-none">×</button>
+                          </div>
+                        )}
+                        <textarea
+                          onPaste={handlePasteImage((dataUrl) => setLogoAnnotation(dataUrl))}
+                          value={logoAnnotation && logoAnnotation.startsWith('data:') ? '' : logoAnnotation}
+                          onChange={(e) => setLogoAnnotation(e.target.value)}
+                          placeholder={lang === 'es' ? '✏️ O descríbelo o usa Ctrl+V para pegar imagen aquí...' : '✏️ Or describe / press Ctrl+V to paste image...'}
+                          rows={2} className="input-glow text-sm" />
+                      </div>
+
+                      {/* Client Logos / Testimonials */}
+                      <div>
+                        <p className="text-xs text-[var(--text-muted)] mb-2 font-medium">
+                          {lang === 'es' ? '🤝 Logos de Clientes (Testimonios)' : '🤝 Client Logos (Social Proof)'}
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                          {[0, 1, 2, 3].map((i) => (
+                            <div key={`client-${i}`} className="bg-white/5 border border-white/10 rounded-xl p-3 flex flex-col gap-2">
+                              <label className="flex items-center justify-center cursor-pointer">
+                                <span className={`w-full text-center py-2 rounded-lg border text-xs font-medium transition-all duration-200 ${clientLogos[i]?.dataUrl ? 'border-green-500/40 bg-green-500/10 text-green-400' : 'border-[var(--border)] text-[var(--text-muted)] hover:text-white hover:border-[var(--border-hover)]'
+                                  }`}>
+                                  {clientLogos[i]?.dataUrl ? (lang === 'es' ? '✓ Cargado' : '✓ Loaded') : (lang === 'es' ? '📤 Subir' : '📤 Upload')}
+                                </span>
+                                <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                                  const file = e.target.files?.[0]
+                                  if (!file) return
+                                  const reader = new FileReader()
+                                  reader.onload = (ev) => {
+                                    const dataUrl = ev.target?.result as string
+                                    const updated = [...clientLogos]
+                                    if (!updated[i]) updated[i] = { dataUrl: '', annotation: '' }
+                                    updated[i].dataUrl = dataUrl
+                                    setClientLogos(updated)
+                                  }
+                                  reader.readAsDataURL(file)
+                                }} />
+                              </label>
+
+                              {clientLogos[i]?.dataUrl && (
+                                <div className="relative">
+                                  <img src={clientLogos[i].dataUrl} alt={`Client ${i + 1}`} className="h-12 w-full object-contain rounded-lg border border-[var(--border)] bg-white/10 p-1" />
+                                  <button onClick={() => { const u = [...clientLogos]; u[i] = { dataUrl: '', annotation: '' }; setClientLogos(u) }} className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center cursor-pointer border-none shadow-md">×</button>
+                                </div>
+                              )}
+
+                              <textarea
+                                onPaste={handlePasteImage((dataUrl) => {
+                                  const updated = [...clientLogos]
+                                  if (!updated[i]) updated[i] = { dataUrl: '', annotation: '' }
+                                  updated[i].dataUrl = dataUrl
+                                  setClientLogos(updated)
+                                })}
+                                value={clientLogos[i]?.annotation || ''}
+                                onChange={(e) => {
+                                  const updated = [...clientLogos]
+                                  if (!updated[i]) updated[i] = { dataUrl: '', annotation: '' }
+                                  updated[i].annotation = e.target.value
+                                }}
+                                placeholder={lang === 'es' ? 'Nombre o Ctrl+V' : 'Name or Ctrl+V'}
+                                rows={1} className="input-glow text-[11px] px-2 py-1.5 min-h-[30px]" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Images */}
+                      {[0, 1, 2].map((i) => (
+                        <div key={i}>
+                          <p className="text-xs text-[var(--text-muted)] mb-2 font-medium">
+                            {lang === 'es' ? `🖼️ Imagen ${i + 1}` : `🖼️ Image ${i + 1}`}
+                          </p>
+                          <label className="flex items-center gap-3 cursor-pointer mb-2">
+                            <span className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-medium transition-all duration-200 ${assets[i]?.dataUrl ? 'border-green-500/40 bg-green-500/10 text-green-400' : 'border-[var(--border)] bg-[var(--surface-raised)] text-[var(--text-muted)] hover:text-white hover:border-[var(--border-hover)]'
+                              }`}>
+                              📤 {assets[i]?.dataUrl ? (lang === 'es' ? 'Imagen cargada ✓' : 'Image loaded ✓') : (lang === 'es' ? 'Subir imagen' : 'Upload image')}
+                            </span>
+                            <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                              const file = e.target.files?.[0]
+                              if (!file) return
+                              const reader = new FileReader()
+                              reader.onload = (ev) => {
+                                const dataUrl = ev.target?.result as string
+                                const updated = [...assets]
+                                if (!updated[i]) updated[i] = { dataUrl: '', annotation: '' }
+                                updated[i].dataUrl = dataUrl
+                                setAssets(updated)
+                              }
+                              reader.readAsDataURL(file)
+                            }} />
+                          </label>
+                          {assets[i]?.dataUrl && (
+                            <div className="relative mb-2 inline-block">
+                              <img src={assets[i].dataUrl} alt={`Asset ${i + 1}`} className="h-20 w-auto rounded-lg border border-[var(--border)] object-cover bg-white/5" />
+                              <button onClick={() => { const u = [...assets]; u[i] = { ...u[i], dataUrl: '' }; setAssets(u) }} className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center cursor-pointer border-none">×</button>
+                            </div>
+                          )}
+                          <textarea
+                            onPaste={handlePasteImage((dataUrl) => {
+                              const updated = [...assets]
+                              if (!updated[i]) updated[i] = { dataUrl: '', annotation: '' }
+                              updated[i].dataUrl = dataUrl
+                              setAssets(updated)
+                            })}
+                            value={assets[i]?.annotation || ''}
+                            onChange={(e) => {
+                              const updated = [...assets]
+                              if (!updated[i]) updated[i] = { dataUrl: '', annotation: '' }
+                              updated[i].annotation = e.target.value
+                              setAssets(updated)
+                            }}
+                            placeholder={lang === 'es'
+                              ? `¿Qué es? (o usa Ctrl+V para pegar foto aquí)`
+                              : `What is this? (or press Ctrl+V to paste)`}
+                            rows={2} className="input-glow text-sm" />
+                        </div>
+                      ))}
+                    </div>
+                  </motion.section>
+
+                  {/* 9 — Inspiration */}
+                  <motion.section variants={sectionVariants} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-40px' }} transition={{ duration: 0.55 }} className="glass-panel">
+                    <Step n={9} title={lang === 'es' ? 'Referencias de Inspiración' : 'Inspiration References'} sub={lang === 'es' ? 'Sube capturas de sitios web que te gusten. Bolt/v0 analizarán su estilo visual y diseño.' : 'Upload screenshots of websites you love. Bolt/v0 will analyze their visual style and layout.'} />
+                    <div className="flex flex-col gap-3">
+                      {[0, 1, 2].map((i) => (
+                        <div key={`insp-${i}`}>
+                          <label className="flex items-center gap-3 cursor-pointer mb-2">
+                            <span className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-medium transition-all duration-200 ${inspirations[i]?.dataUrl ? 'border-green-500/40 bg-green-500/10 text-green-400' : 'border-[var(--border)] bg-[var(--surface-raised)] text-[var(--text-muted)] hover:text-white hover:border-[var(--border-hover)]'
+                              }`}>
+                              {inspirations[i]?.dataUrl ? (lang === 'es' ? 'Ref cargada ✓' : 'Ref loaded ✓') : (lang === 'es' ? 'Subir Captura' : 'Upload Screenshot')}
+                            </span>
+                            <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                              const file = e.target.files?.[0]
+                              if (!file) return
+                              const reader = new FileReader()
+                              reader.onload = (ev) => {
+                                const dataUrl = ev.target?.result as string
+                                const updated = [...inspirations]
+                                if (!updated[i]) updated[i] = { dataUrl: '', annotation: '' }
+                                updated[i].dataUrl = dataUrl
+                                setInspirations(updated)
+                              }
+                              reader.readAsDataURL(file)
+                            }} />
+                          </label>
+                          {inspirations[i]?.dataUrl && (
+                            <div className="relative mb-2 inline-block">
+                              <img src={inspirations[i].dataUrl} alt={`Inspiration ${i + 1}`} className="h-20 w-auto rounded-lg border border-[var(--border)] object-cover bg-white/5" />
+                              <button onClick={() => { const u = [...inspirations]; u[i] = { ...u[i], dataUrl: '' }; setInspirations(u) }} className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center cursor-pointer border-none">×</button>
+                            </div>
+                          )}
+                          <textarea
+                            onPaste={handlePasteImage((dataUrl) => {
+                              const updated = [...inspirations]
+                              if (!updated[i]) updated[i] = { dataUrl: '', annotation: '' }
+                              updated[i].dataUrl = dataUrl
+                              setInspirations(updated)
+                            })}
+                            value={inspirations[i]?.annotation || ''}
+                            onChange={(e) => {
+                              const updated = [...inspirations]
+                              if (!updated[i]) updated[i] = { dataUrl: '', annotation: '' }
+                              updated[i].annotation = e.target.value
+                              setInspirations(updated)
+                            }}
+                            placeholder={lang === 'es'
+                              ? `¿Qué te gusta de esta captura? (o pega imagen con Ctrl+V)`
+                              : `What do you like here? (or Ctrl+V to paste)`}
+                            rows={1} className="input-glow text-sm" />
+                        </div>
+                      ))}
+                    </div>
                   </motion.section>
 
                   {/* Output */}
                   <motion.section variants={sectionVariants} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-40px' }} transition={{ duration: 0.55 }} className="glass-panel">
-                    <PromptOutput prompt={prompt} onCopy={handlePromptCopy} />
+                    <PromptOutput
+                      prompt={prompt}
+                      isLocked={isLocked}
+                      onUnlock={() => setShowPaywall(true)}
+                      onCopy={handlePromptCopy}
+                      onExportZip={handleExportZip}
+                    />
                   </motion.section>
 
                   {/* Paste hint */}
@@ -312,7 +766,52 @@ export default function App() {
                   </motion.section>
 
                   <motion.footer initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.2 }} className="text-center pt-6 pb-10">
-                    <p className="text-sm text-[var(--text-dim)]">{t.madeBy} <span className="text-cyan-400">&#x1F499;</span> {t.byDaniel}</p>
+                    <div className="flex flex-col items-center gap-5 mb-8">
+                      <p className="text-base font-bold text-white tracking-wide uppercase drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">{t.followUs}</p>
+                      <div className="flex items-center justify-center gap-6">
+                        {[
+                          { href: "https://www.instagram.com/danieldiaz.ia/", color: "hover:text-[#E1306C] hover:border-[#E1306C]/50 hover:bg-[#E1306C]/10 hover:drop-shadow-[0_0_15px_rgba(225,48,108,0.8)]", icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg> },
+                          { href: "https://www.tiktok.com/@danieldiaz.ia", color: "hover:text-white hover:border-white/50 hover:bg-white/10 hover:drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]", icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.32 6.32 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.75a4.85 4.85 0 01-1.01-.06z" /></svg> },
+                          { href: "https://www.linkedin.com/in/daniel-d%C3%ADaz-b36680187/", color: "hover:text-[#0A66C2] hover:border-[#0A66C2]/50 hover:bg-[#0A66C2]/10 hover:drop-shadow-[0_0_15px_rgba(10,102,194,0.8)]", icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg> },
+                          { href: "https://www.facebook.com/profile.php?id=61577966199810", color: "hover:text-[#1877F2] hover:border-[#1877F2]/50 hover:bg-[#1877F2]/10 hover:drop-shadow-[0_0_15px_rgba(24,119,242,0.8)]", icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg> }
+                        ].map((s, i) => (
+                          <motion.div
+                            key={i}
+                            initial={{ opacity: 0, scale: 0.1, y: 20 }}
+                            whileInView={{ opacity: 1, scale: 1, y: 0 }}
+                            viewport={{ once: true, margin: "50px" }}
+                            transition={{ delay: i * 0.15 + 0.3, type: "spring", stiffness: 200, damping: 12 }}
+                          >
+                            <a
+                              href={s.href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={`flex items-center justify-center w-12 h-12 rounded-full border border-white/10 bg-white/5 backdrop-blur-md text-white/90 cursor-pointer shadow-[0_4px_15px_rgba(0,0,0,0.5)] transition-all duration-300 ${s.color}`}
+                            >
+                              <motion.div
+                                whileHover={{ scale: 1.25, rotate: [-10, 10, -10, 0] }}
+                                animate={{ y: [0, -3, 0], scale: [1, 1.05, 1], filter: ['brightness(1)', 'brightness(1.5)', 'brightness(1)'] }}
+                                transition={{ repeat: Infinity, duration: 3, delay: i * 0.3, ease: "easeInOut" }}
+                              >
+                                {s.icon}
+                              </motion.div>
+                            </a>
+                          </motion.div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <a href="https://danieldiaz.com" target="_blank" rel="noopener noreferrer" className="block w-fit mx-auto group">
+                      <motion.div
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="inline-flex items-center gap-2.5 px-6 py-2.5 rounded-full border border-white/10 bg-[#000000]/40 backdrop-blur-md shadow-[0_0_20px_rgba(0,119,255,0.05)] group-hover:bg-[#000000]/60 group-hover:border-[#0077ff]/30 group-hover:shadow-[0_0_25px_rgba(0,119,255,0.2)] transition-all duration-300"
+                      >
+                        <span className="text-[11px] font-bold text-white/50 tracking-widest uppercase">{t.madeBy}</span>
+                        <motion.span animate={{ scale: [1, 1.3, 1] }} transition={{ repeat: Infinity, duration: 1.2, ease: "easeInOut" }}>💙</motion.span>
+                        <span className="text-sm font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 group-hover:from-blue-400 group-hover:to-cyan-300 transition-all duration-300">{t.byDaniel}</span>
+                      </motion.div>
+                    </a>
                   </motion.footer>
                 </div>
               </main>
@@ -361,7 +860,7 @@ export default function App() {
                       <br />
                       <span className="bg-clip-text text-transparent shimmer-text"
                         style={{
-                          backgroundImage: 'linear-gradient(90deg, #0077ff, #0ea5e9, #3b82f6, #06b6d4, #0ea5e9, #0077ff)',
+                          backgroundImage: 'linear-gradient(90deg, #ffffff, #88b0ff, #0077ff, #88b0ff, #ffffff)',
                           backgroundSize: '200% auto',
                         }}
                       >
@@ -379,31 +878,25 @@ export default function App() {
                     </motion.p>
 
                     {/* CTA → opens auth */}
-                    <motion.button
-                      onClick={handleCTAClick}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 1, duration: 0.5, type: 'spring', stiffness: 200 }}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="group relative overflow-hidden px-8 py-4 sm:px-10 sm:py-5 rounded-full font-bold text-base sm:text-lg text-white bg-[#0077ff] border border-[#0077ff]/50 shadow-[0_0_30px_rgba(0,119,255,0.4)] cursor-pointer transition-all duration-300 hover:shadow-[0_0_50px_rgba(0,119,255,0.6)]"
-                    >
-                      <motion.div className="absolute top-0 bottom-0 w-1/2 bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-12"
-                        animate={{ left: ['-100%', '200%'] }}
-                        transition={{ duration: 2.5, repeat: Infinity, ease: 'linear' }}
-                      />
-                      <span className="relative z-10 flex items-center gap-2">
-                        <motion.span
-                          animate={{ rotate: [0, -10, 10, -10, 10, 0], scale: [1, 1.2, 1] }}
-                          transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
-                          className="drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]"
-                        >
-                          🚀
-                        </motion.span>
-                        {t.welcomeCTA}
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
-                      </span>
-                    </motion.button>
+                    <div className="relative group/cta inline-block pt-2">
+                      {/* Pulse glow shadow */}
+                      <div className="absolute -inset-1 bg-[var(--accent)] rounded-3xl blur-xl opacity-20 group-hover/cta:opacity-40 transition-opacity duration-700 pointer-events-none pulse" />
+
+                      <motion.button
+                        onClick={handleCTAClick}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 1, duration: 0.5, type: 'spring', stiffness: 200 }}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="relative overflow-hidden px-8 py-4 sm:px-10 sm:py-5 rounded-2xl font-extrabold text-base sm:text-lg text-white bg-[var(--accent)] hover:brightness-110 shadow-[0_4px_20px_rgba(0,119,255,0.4)] hover:shadow-[0_8px_30px_rgba(0,119,255,0.6)] cursor-pointer transition-all duration-300 border-none"
+                      >
+                        <span className="relative z-10 flex items-center gap-3">
+                          {t.welcomeCTA}
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="transition-transform duration-300 group-hover/cta:translate-x-1"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
+                        </span>
+                      </motion.button>
+                    </div>
 
                     <motion.button
                       onClick={() => { setShowAuth(true) }}
@@ -450,6 +943,7 @@ export default function App() {
 
               {/* ── Persuasive Sections ── */}
               <ProblemSection />
+              <HowItWorks />
               <BenefitsSection />
               <WhyVibepick />
               <FAQ />
@@ -482,7 +976,52 @@ export default function App() {
 
               {/* Footer */}
               <motion.footer initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.2 }} className="text-center pt-6 pb-10">
-                <p className="text-sm text-[var(--text-dim)]">{t.madeBy} <span className="text-cyan-400">&#x1F499;</span> {t.byDaniel}</p>
+                <div className="flex flex-col items-center gap-5 mb-8">
+                  <p className="text-base font-bold text-white tracking-wide uppercase drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">{t.followUs}</p>
+                  <div className="flex items-center justify-center gap-6">
+                    {[
+                      { href: "https://www.instagram.com/danieldiaz.ia/", color: "hover:text-[#E1306C] hover:border-[#E1306C]/50 hover:bg-[#E1306C]/10 hover:drop-shadow-[0_0_15px_rgba(225,48,108,0.8)]", icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg> },
+                      { href: "https://www.tiktok.com/@danieldiaz.ia", color: "hover:text-white hover:border-white/50 hover:bg-white/10 hover:drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]", icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.32 6.32 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.75a4.85 4.85 0 01-1.01-.06z" /></svg> },
+                      { href: "https://www.linkedin.com/in/daniel-d%C3%ADaz-b36680187/", color: "hover:text-[#0A66C2] hover:border-[#0A66C2]/50 hover:bg-[#0A66C2]/10 hover:drop-shadow-[0_0_15px_rgba(10,102,194,0.8)]", icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg> },
+                      { href: "https://www.facebook.com/profile.php?id=61577966199810", color: "hover:text-[#1877F2] hover:border-[#1877F2]/50 hover:bg-[#1877F2]/10 hover:drop-shadow-[0_0_15px_rgba(24,119,242,0.8)]", icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg> }
+                    ].map((s, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, scale: 0.1, y: 20 }}
+                        whileInView={{ opacity: 1, scale: 1, y: 0 }}
+                        viewport={{ once: true, margin: "50px" }}
+                        transition={{ delay: i * 0.15 + 0.3, type: "spring", stiffness: 200, damping: 12 }}
+                      >
+                        <a
+                          href={s.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`flex items-center justify-center w-12 h-12 rounded-full border border-white/10 bg-white/5 backdrop-blur-md text-white/90 cursor-pointer shadow-[0_4px_15px_rgba(0,0,0,0.5)] transition-all duration-300 ${s.color}`}
+                        >
+                          <motion.div
+                            whileHover={{ scale: 1.25, rotate: [-10, 10, -10, 0] }}
+                            animate={{ y: [0, -3, 0], scale: [1, 1.05, 1], filter: ['brightness(1)', 'brightness(1.5)', 'brightness(1)'] }}
+                            transition={{ repeat: Infinity, duration: 3, delay: i * 0.3, ease: "easeInOut" }}
+                          >
+                            {s.icon}
+                          </motion.div>
+                        </a>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+
+                <a href="https://danieldiaz.com" target="_blank" rel="noopener noreferrer" className="block w-fit mx-auto group">
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="inline-flex items-center gap-2.5 px-6 py-2.5 rounded-full border border-white/10 bg-[#000000]/40 backdrop-blur-md shadow-[0_0_20px_rgba(0,119,255,0.05)] group-hover:bg-[#000000]/60 group-hover:border-[#0077ff]/30 group-hover:shadow-[0_0_25px_rgba(0,119,255,0.2)] transition-all duration-300"
+                  >
+                    <span className="text-[11px] font-bold text-white/50 tracking-widest uppercase">{t.madeBy}</span>
+                    <motion.span animate={{ scale: [1, 1.3, 1] }} transition={{ repeat: Infinity, duration: 1.2, ease: "easeInOut" }}>💙</motion.span>
+                    <span className="text-sm font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 group-hover:from-blue-400 group-hover:to-cyan-300 transition-all duration-300">{t.byDaniel}</span>
+                  </motion.div>
+                </a>
               </motion.footer>
             </div>
           </motion.div>

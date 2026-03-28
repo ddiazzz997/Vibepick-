@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react'
 import { supabase } from '../lib/supabase'
 import type { User } from '@supabase/supabase-js'
+import fpPromise from '@fingerprintjs/fingerprintjs'
 
 /* ── Types ── */
 interface Profile {
@@ -65,29 +66,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     /* Sign Up */
     const signUp = async (email: string, password: string, meta: { first_name: string; last_name: string; phone: string }) => {
-        const { data, error } = await supabase.auth.signUp({ email, password })
-        if (error) return { error: error.message }
-        if (!data.user) return { error: 'No user returned' }
+        // 1. Local storage check
+        if (localStorage.getItem('vibepick_registered') === 'true') {
+            return { error: 'Este dispositivo ya ha sido utilizado para crear una cuenta. Por favor, inicia sesión.' }
+        }
 
-        // Create profile row
-        const { error: profileErr } = await supabase.from('users_profile').insert({
-            id: data.user.id,
-            first_name: meta.first_name,
-            last_name: meta.last_name,
-            phone: meta.phone,
-            prompt_count: 0,
-            is_pro: false,
-        })
-        if (profileErr) return { error: profileErr.message }
+        try {
+            // 2. Generate fingerprint
+            const fp = await fpPromise.load()
+            const result = await fp.get()
+            const fingerprint = result.visitorId
 
-        setProfile({
-            first_name: meta.first_name,
-            last_name: meta.last_name,
-            phone: meta.phone,
-            prompt_count: 0,
-            is_pro: false,
-        })
-        return { error: null }
+            // 3. Check database using RPC
+            const { data: hasRegistered, error: rpcError } = await supabase.rpc('check_device_fingerprint', { p_fingerprint: fingerprint })
+
+            if (hasRegistered) {
+                // Set local storage just in case it was cleared by the user
+                localStorage.setItem('vibepick_registered', 'true')
+                return { error: 'Este dispositivo ya ha sido utilizado para crear una cuenta. Por favor, inicia sesión.' }
+            }
+
+            // 4. Proceed with normal signup
+            const { data, error } = await supabase.auth.signUp({ email, password })
+            if (error) return { error: error.message }
+            if (!data.user) return { error: 'No user returned' }
+
+            // Create profile row including the device fingerprint
+            const { error: profileErr } = await supabase.from('users_profile').insert({
+                id: data.user.id,
+                first_name: meta.first_name,
+                last_name: meta.last_name,
+                phone: meta.phone,
+                prompt_count: 0,
+                is_pro: false,
+                device_fingerprint: fingerprint,
+            })
+            if (profileErr) return { error: profileErr.message }
+
+            // Mark device as registered
+            localStorage.setItem('vibepick_registered', 'true')
+
+            setProfile({
+                first_name: meta.first_name,
+                last_name: meta.last_name,
+                phone: meta.phone,
+                prompt_count: 0,
+                is_pro: false,
+            })
+            return { error: null }
+        } catch (err: any) {
+            console.error('Error in signup process:', err)
+            return { error: 'Error al verificar el dispositivo o crear la cuenta. Intenta de nuevo.' }
+        }
     }
 
     /* Sign In */

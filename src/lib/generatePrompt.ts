@@ -5,6 +5,15 @@ export interface PromptInputs {
   sections: string[]
   cta: string
   lang?: 'en' | 'es'
+  siteLang?: string          // Language for the GENERATED website (e.g. 'Spanish', 'English')
+  whatsapp?: string          // WhatsApp number in international format (e.g. 573001234567)
+  instagram?: string         // Instagram URL
+  facebook?: string          // Facebook URL
+  tiktok?: string            // TikTok URL
+  logoAnnotation?: string    // Text annotation for logo image
+  clientLogos?: Array<{ dataUrl: string; annotation: string }> // Client logos / Testimonials
+  assets?: Array<{ dataUrl: string; annotation: string }> // Images with annotations
+  inspirations?: Array<{ dataUrl: string; annotation: string }> // Inspiration screenshot dataUrls
 }
 
 /*
@@ -91,7 +100,7 @@ const sectionPrompts: Record<string, { en: string; es: string }> = {
 
 const promptText = {
   en: {
-    buildMe: 'Build me a beautiful, complete, single-page website.',
+    buildMe: 'Build me a beautiful, complete, high-conversion, single-page website.',
     whatFor: "**What it's for:**",
     placeholder: '[Describe your website/business here]',
     businessType: '**Type of business:**',
@@ -116,8 +125,9 @@ const promptText = {
     conversionAnchoring: '- If there are pricing tiers, show the most expensive option first to create price anchoring so the middle option feels like a deal.',
     conversionRiskReversal: '- Include a risk-reversal element near the CTA (e.g. "30-day money-back guarantee", "No credit card required", "Cancel anytime").',
     premiumTitle: '**Premium design & color psychology:**',
-    premiumColorPsychology: '- Choose colors based on industry color psychology: green/blue for health & trust, red/orange for food & energy, black/gold for luxury, blue/purple for tech & innovation, earth tones for real estate & eco. Max 3 main colors + 1 accent.',
-    premiumTypography: '__INDUSTRY_TYPO__',
+    premiumColorPsychology: '__INDUSTRY_COLOR__',
+    premiumTheme: '__INDUSTRY_THEME__',
+    premiumTypography: '**MANDATORY FONTS (do not use system fonts or browser defaults):**\n__INDUSTRY_TYPO__\n- Add the @import URL from Google Fonts at the TOP of your CSS/Tailwind config. Set font-family on html/body and override all h1-h3 headings explicitly. Do not let the framework override these fonts.',
     premiumGlass: '- Use glassmorphism on cards (semi-transparent background + subtle 1px white border at 10% opacity + backdrop-blur) and a sticky navbar with backdrop-blur.',
     premiumAnimations: '- Use stagger animations: elements appear in cascade (one after another with 100-150ms delay). Stats/numbers must animate counting up when visible. The main CTA button should have a subtle pulsing glow/shadow behind it.',
     premiumGradient: '- The main headline should use gradient text (gradient on the text itself, not the background). Use animated subtle gradients on the hero section and CTA buttons.',
@@ -138,7 +148,7 @@ const promptText = {
     neuroSpecificity: '- NEVER use round numbers. Always use specific, credible figures: "2,347 businesses" not "2,000+", "43% increase" not "significant increase", "in 47 days" not "in about a month". Specific numbers trigger the brain\'s credibility bias.',
     neuroMicroCopy: '- ALL CTA button text must be in first person from the visitor\'s perspective: "Yes, I want this →" not "Buy now", "Start my free trial" not "Sign up", "Send me the guide" not "Download", "Let\'s talk about my project" not "Contact us". The visitor must feel the button is THEIR decision, not a command.',
     polishTitle: '**Cinematic polish & micro-interactions:**',
-    polishEntrance: '- Implement a PRELOADER REVEAL sequence (mandatory, maximum 2 seconds total): PHASE 1 — Show a full-screen overlay in the brand\'s primary color with a minimal loading indicator (a thin progress bar from 0-100% or a small animated brand logo in the center). PHASE 2 — The overlay performs a dramatic exit: it splits in half vertically and slides to both edges, OR it slides upward with a fast cubic-bezier curve (0.76, 0, 0.24, 1), OR it dissolves using an animated clip-path (circle expanding from center). PHASE 3 — As the overlay exits, the Hero content is revealed with choreographed stagger: the background Canvas is already running underneath, the headline clips in from below (overflow-hidden + translateY), and images zoom from 110% to 100% (subtle scale-down). This 3-phase entrance is the #1 hallmark of a premium agency website. NEVER show content loading all at once.',
+    polishEntrance: '__INDUSTRY_PRELOADER__',
     polishScrollBar: '- Add a thin scroll progress bar at the very top of the page (2-3px height, brand accent color) that fills from left to right as the user scrolls down. This activates the psychological desire to complete (people want to reach 100%).',
     polishCursor: '__INDUSTRY_CURSOR__',
     polishNavActive: '- The sticky navbar must highlight the currently visible section as the user scrolls. The active link should have a subtle accent underline or color change that transitions smoothly between sections.',
@@ -212,8 +222,9 @@ const promptText = {
     conversionAnchoring: '- Si hay planes de precios, muestra primero la opción más cara para generar anclaje de precio, haciendo que la opción intermedia se sienta como una ganga.',
     conversionRiskReversal: '- Incluye un elemento de reversión de riesgo cerca del CTA (ej: "Garantía de 30 días", "Sin tarjeta de crédito requerida", "Cancela cuando quieras").',
     premiumTitle: '**Diseño premium y psicología del color:**',
-    premiumColorPsychology: '- Elige colores basándote en la psicología de color de la industria: verde/azul para salud y confianza, rojo/naranja para alimentos y energía, negro/dorado para lujo, azul/púrpura para tech e innovación, tonos tierra para bienes raíces y eco. Máximo 3 colores principales + 1 acento.',
-    premiumTypography: '__INDUSTRY_TYPO__',
+    premiumColorPsychology: '__INDUSTRY_COLOR__',
+    premiumTheme: '__INDUSTRY_THEME__',
+    premiumTypography: '**FUENTES OBLIGATORIAS (no uses fuentes del sistema o defaults del navegador):**\n__INDUSTRY_TYPO__\n- Agrega la URL @import de Google Fonts en la parte SUPERIOR de tu CSS/config de Tailwind. Establece font-family en html/body y sobrescribe todos los encabezados h1-h3 explícitamente. No dejes que el framework sobrescriba estas fuentes.',
     premiumGlass: '- Usa glassmorphism en tarjetas (fondo semi-transparente + borde sutil de 1px blanco al 10% de opacidad + backdrop-blur) y navbar sticky con backdrop-blur.',
     premiumAnimations: '- Usa animaciones stagger: los elementos aparecen en cascada (uno tras otro con 100-150ms de delay). Los números/stats deben animarse contando hacia arriba al ser visibles. El botón CTA principal debe tener un glow/sombra brillante pulsante sutil detrás.',
     premiumGradient: '- El headline principal debe usar texto con gradiente (el gradiente va en el texto mismo, no en el fondo). Usa gradientes animados sutiles en la sección hero y en los botones CTA.',
@@ -234,7 +245,7 @@ const promptText = {
     neuroSpecificity: '- NUNCA uses números redondos. Siempre usa cifras específicas y creíbles: "2,347 negocios" no "2,000+", "43% de aumento" no "aumento significativo", "en 47 días" no "en aproximadamente un mes". Los números específicos activan el sesgo de credibilidad del cerebro.',
     neuroMicroCopy: '- TODOS los textos de botones CTA deben estar en primera persona desde la perspectiva del visitante: "Sí, lo quiero →" no "Comprar", "Comenzar mi prueba gratis" no "Registrarse", "Envíame la guía" no "Descargar", "Hablemos de mi proyecto" no "Contáctanos". El visitante debe sentir que el botón es SU decisión, no una orden.',
     polishTitle: '**Pulimiento cinematográfico y micro-interacciones:**',
-    polishEntrance: '- Implementa una secuencia de PRELOADER REVEAL (obligatorio, máximo 2 segundos en total): FASE 1 — Muestra un overlay a pantalla completa con el color primario de la marca y un indicador de carga minimalista (una barra de progreso delgada de 0-100% o un pequeño logo de marca animado en el centro). FASE 2 — El overlay realiza una salida dramática: se divide a la mitad verticalmente y se desliza hacia ambos bordes, O se desliza hacia arriba con una curva cubic-bezier rápida (0.76, 0, 0.24, 1), O se disuelve usando un clip-path animado (círculo expandiéndose desde el centro). FASE 3 — Mientras el overlay sale, el contenido del Hero se revela con stagger coreografiado: el Canvas de fondo ya está corriendo debajo, el headline se recorta desde abajo (overflow-hidden + translateY), y las imágenes hacen zoom de 110% a 100% (scale-down sutil). Esta entrada en 3 fases es el sello #1 de un sitio web de agencia premium. NUNCA muestres todo el contenido cargando de golpe.',
+    polishEntrance: '__INDUSTRY_PRELOADER__',
     polishScrollBar: '- Agrega una barra delgada de progreso de scroll en la parte superior de la página (2-3px de alto, color de acento de marca) que se llena de izquierda a derecha conforme el usuario hace scroll. Esto activa el deseo psicológico de completar (la gente quiere llegar al 100%).',
     polishCursor: '__INDUSTRY_CURSOR__',
     polishNavActive: '- La navbar sticky debe resaltar la sección actualmente visible conforme el usuario hace scroll. El enlace activo debe tener un subrayado de acento sutil o cambio de color que transicione suavemente entre secciones.',
@@ -293,6 +304,9 @@ interface IndustryProfile {
   typo: { en: string; es: string }
   bg: { en: string; es: string }
   cursor: { en: string; es: string }
+  preloader: { en: string; es: string }
+  colorHint: { en: string; es: string }
+  themeHint: { en: string; es: string }
 }
 
 function detectIndustryProfile(niche: string): IndustryProfile {
@@ -301,11 +315,19 @@ function detectIndustryProfile(niche: string): IndustryProfile {
   const is = (...keywords: string[]) => keywords.some(k => n.includes(k))
 
   // Tech / AI / SaaS / Software
-  if (is('tech', 'ai', 'ia', 'saas', 'software', 'app', 'startup', 'digital', 'platform', 'cloud', 'data', 'automation', 'api')) {
+  if (is('tech', 'ai', 'ia', 'saas', 'software', 'app', 'startup', 'digital', 'platform', 'cloud', 'data', 'automation', 'api', 'celular', 'phone', 'movil', 'móvil', 'electronic', 'electrónic', 'gadget', 'device')) {
     return {
       typo: {
         en: '- Typography: Use Space Grotesk (headlines, weight 700-900) + Inter (body, weight 400-500) from Google Fonts. Geometric, technical, modern — signal innovation and precision.',
         es: '- Tipografía: Usa Space Grotesk (títulos, weight 700-900) + Inter (cuerpo, weight 400-500) de Google Fonts. Geométrica, técnica, moderna — transmite innovación y precisión.',
+      },
+      colorHint: {
+        en: '- Color palette: Deep navy (#0a0e1a) as base, electric blue (#0066ff) as primary accent, cyan (#06b6d4) as secondary accent. These colors signal technology, innovation, and trust. Max 3 main colors + 1 accent.',
+        es: '- Paleta de colores: Azul marino profundo (#0a0e1a) como base, azul eléctrico (#0066ff) como acento primario, cian (#06b6d4) como acento secundario. Estos colores transmiten tecnología, innovación y confianza. Máximo 3 colores principales + 1 acento.',
+      },
+      themeHint: {
+        en: '- Use a DARK theme. Tech and digital brands feel innovative, premium, and forward-thinking on dark backgrounds. This is non-negotiable for this type of business.',
+        es: '- Usa un tema OSCURO. Las marcas tecnológicas y digitales se ven innovadoras, premium y visionarias sobre fondos oscuros. Esto es innegociable para este tipo de negocio.',
       },
       bg: {
         en: '- Background animation: Flowing neural network nodes connected by thin lines — nodes pulse softly, connections appear and dissolve. Feels like live data intelligence.',
@@ -315,12 +337,24 @@ function detectIndustryProfile(niche: string): IndustryProfile {
         en: '- Custom cursor: A sharp crosshair dot (4px) with a faint data-particle trail that fades over 0.5s as the cursor moves. On hover over interactive elements: cursor expands into a scanning circle with a rotating arc. Feels like navigating a live interface.',
         es: '- Cursor personalizado: Un punto crosshair preciso (4px) con un rastro de partículas de datos que se desvanece en 0.5s al mover el cursor. Al hover sobre elementos interactivos: se expande en un círculo de escaneo con un arco giratorio. Se siente como navegar una interfaz en vivo.',
       },
+      preloader: {
+        en: '- PRELOADER: Use a deep blue/navy full-screen overlay. Center: animated brand logo (scale 0.8 to 1.0, then fade) + a thin horizontal progress bar beneath it. EXIT: clip-path circle expanding from center (cubic-bezier 0.76, 0, 0.24, 1, 0.6s). Feels like a system booting up. HERO entrance: headline scans in character by character (typewriter, 40ms per char), then the visual element fades in from the right.',
+        es: '- PRELOADER: Usa un overlay de pantalla completa azul profundo/navy. Centro: logo de marca animado (scale 0.8 a 1.0, luego fade) + barra de progreso horizontal delgada debajo. SALIDA: clip-path círculo expandíiéndose desde el centro (cubic-bezier 0.76, 0, 0.24, 1, 0.6s). Se siente como un sistema encendiéndose. Entrada al HERO: headline escanea carácter por carácter (typewriter, 40ms por carácter), luego el elemento visual aparece desde la derecha.',
+      },
     }
   }
 
   // Luxury / Fashion / Premium
   if (is('lujo', 'luxury', 'fashion', 'moda', 'jewelry', 'joyería', 'premium', 'haute', 'couture', 'perfume', 'reloj', 'watch', 'brand')) {
     return {
+      colorHint: {
+        en: '- Color palette: Pure black (#000) as base, champagne gold (#c9a84c) as primary accent, ivory (#f5f0e8) as secondary. Communicates exclusivity and timeless luxury.',
+        es: '- Paleta: Negro puro (#000) como base, oro champán (#c9a84c) acento primario, marfil (#f5f0e8) secundario. Comunica exclusividad y lujo atemporal.',
+      },
+      themeHint: {
+        en: '- Use a DARK theme. Luxury brands are editorial and cinematic. Light backgrounds feel mass-market for this business type.',
+        es: '- Usa un tema OSCURO. Las marcas de lujo son editoriales y cinematográficas. Los fondos claros se asocian al mercado masivo.',
+      },
       typo: {
         en: '- Typography: Use Cormorant Garamond (headlines, weight 300-600, italic for accent lines) + Lato (body, weight 300-400) from Google Fonts. Elegant, editorial, refined — feels like a high-end magazine.',
         es: '- Tipografía: Usa Cormorant Garamond (títulos, weight 300-600, italic para líneas de acento) + Lato (cuerpo, weight 300-400) de Google Fonts. Elegante, editorial, refinado — se siente como una revista de alta gama.',
@@ -333,12 +367,24 @@ function detectIndustryProfile(niche: string): IndustryProfile {
         en: '- Custom cursor: A thin elegant ring (1.5px stroke, no fill, 28px diameter) that moves with smooth inertia. On hover: the ring expands softly to 40px and slightly reduces opacity — like touching crystal. Never a filled dot. Minimalist authority.',
         es: '- Cursor personalizado: Un anillo fino elegante (1.5px de trazo, sin relleno, 28px de diámetro) que se mueve con inercia suave. Al hover: el anillo se expande suavemente a 40px y reduce ligeramente la opacidad — como tocar cristal. Nunca un punto sólido. Autoridad minimalista.',
       },
+      preloader: {
+        en: '- PRELOADER: Black full-screen overlay with a single gold/cream thin horizontal line that extends from center-left to center-right (1.5s draw animation). EXIT: slow upward slide with cubic-bezier(0.76, 0, 0.24, 1). HERO entrance: large serif headline fades in letter by letter from bottom, image reveals with a diagonal clip-path wipe. Exudes luxury and editorial prestige.',
+        es: '- PRELOADER: Overlay de pantalla completa negro con una única línea delgada dorada/crema que se extiende de centro-izquierda a centro-derecha (animación de trazado 1.5s). SALIDA: deslizamiento lento hacia arriba con cubic-bezier(0.76, 0, 0.24, 1). Entrada al HERO: titular serif grande aparece letra por letra desde abajo, imagen se revela con un clip-path diagonal. Transmite lujo y prestigio editorial.',
+      },
     }
   }
 
   // Health / Wellness / Eco / Nature
   if (is('salud', 'health', 'wellness', 'bienestar', 'yoga', 'nutrición', 'nutrition', 'organic', 'orgánico', 'eco', 'natural', 'spa', 'medita', 'fitness', 'psicolog')) {
     return {
+      colorHint: {
+        en: '- Color palette: Soft sage green (#8fbc8b) or warm teal (#5a9c6e) as primary, cream white (#faf7f2) as background, warm sand (#d4a96a) as accent. Evokes nature, healing, and calm.',
+        es: '- Paleta: Verde salvia (#8fbc8b) o teal cálido (#5a9c6e) como primario, blanco crema (#faf7f2) como fondo, arena cálida (#d4a96a) como acento. Evoca naturaleza y sanación.',
+      },
+      themeHint: {
+        en: '- Use a LIGHT theme. Wellness brands signal purity and safety through clean, bright backgrounds. Dark themes feel clinical for this business type.',
+        es: '- Usa un tema CLARO. Las marcas de bienestar transmiten pureza y seguridad con fondos brillantes. Los temas oscuros se sienten clínicos para este tipo de negocio.',
+      },
       typo: {
         en: '- Typography: Use Plus Jakarta Sans (headlines, weight 600-800) + Nunito (body, weight 400-500) from Google Fonts. Soft, rounded, warm — communicates trust, calm, and human care.',
         es: '- Tipografía: Usa Plus Jakarta Sans (títulos, weight 600-800) + Nunito (cuerpo, weight 400-500) de Google Fonts. Suave, redondeada, cálida — comunica confianza, calma y cuidado humano.',
@@ -351,12 +397,24 @@ function detectIndustryProfile(niche: string): IndustryProfile {
         en: '- Custom cursor: A soft organic blob (slightly irregular, not a perfect circle, ~20px) that breathes — gently expanding and contracting on a 2s rhythm. On hover: the blob shape shifts and brightens slightly. Feels alive, gentle, organic.',
         es: '- Cursor personalizado: Un blob orgánico suave (ligeramente irregular, no un círculo perfecto, ~20px) que respira — se expande y contrae suavemente en un ritmo de 2s. Al hover: la forma del blob cambia y se ilumina ligeramente. Se siente vivo, suave, orgánico.',
       },
+      preloader: {
+        en: '- PRELOADER: Soft white/cream or brand green overlay. Center: a slowly blooming circular shape (SVG or CSS, from 0 to full size, 1.2s ease-out). EXIT: blob-morph dissolve — the overlay shape morphs into an organic blob and shrinks to nothing. HERO entrance: elements float upward with gentle stagger (120ms delay each). Feels like nature awakening.',
+        es: '- PRELOADER: Overlay suave blanco/crema o verde de marca. Centro: una forma circular que florece lentamente (SVG o CSS, de 0 a tamaño completo, 1.2s ease-out). SALIDA: disolución blob-morph — la forma del overlay se transforma en un blob orgánico y se encoge hasta desaparecer. Entrada al HERO: elementos flotan hacia arriba con stagger suave (120ms de delay cada uno). Se siente como la naturaleza despertándose.',
+      },
     }
   }
 
   // Food / Restaurant / Hospitality / Café
   if (is('restauran', 'food', 'comida', 'chef', 'café', 'cafe', 'cocina', 'kitchen', 'gastro', 'bar', 'hotel', 'hospitalidad', 'hospitality', 'bakery', 'panader')) {
     return {
+      colorHint: {
+        en: '- Color palette: Warm terracotta (#c0613a) as primary, warm cream (#fdf3e3) as background, amber gold (#e8a020) as accent. These colors stimulate appetite and warmth.',
+        es: '- Paleta: Terracota cálida (#c0613a) como primario, crema cálida (#fdf3e3) como fondo, dorado ámbar (#e8a020) como acento. Estimulan el apetito y la calidez.',
+      },
+      themeHint: {
+        en: '- Use a WARM, cream or semi-dark theme. Cold or sterile backgrounds kill appetite for food brands.',
+        es: '- Usa un tema CÁLIDO, crema o semi-oscuro. Los fondos fríos o estériles matan el apetito para marcas de comida.',
+      },
       typo: {
         en: '- Typography: Use Playfair Display (headlines, weight 700-900) + Source Sans Pro (body, weight 400-500) from Google Fonts. Warm, appetizing, editorial — like a premium food magazine.',
         es: '- Tipografía: Usa Playfair Display (títulos, weight 700-900) + Source Sans Pro (cuerpo, weight 400-500) de Google Fonts. Cálido, apetitoso, editorial — como una revista de comida premium.',
@@ -369,12 +427,24 @@ function detectIndustryProfile(niche: string): IndustryProfile {
         en: '- Custom cursor: A warm-toned filled dot (14px) with a soft candlelight-like glow halo around it (radial gradient, brand warm color, fading out). On hover: the glow expands and intensifies. Welcoming and sensory.',
         es: '- Cursor personalizado: Un punto sólido de tono cálido (14px) con un halo de brillo suave tipo vela a su alrededor (gradiente radial, color cálido de marca, desvaneciéndose). Al hover: el halo se expande e intensifica. Acogedor y sensorial.',
       },
+      preloader: {
+        en: '- PRELOADER: Warm amber or terracotta overlay. Center: a fork-and-knife or plate icon drawn with SVG stroke animation (1s). EXIT: diagonal wipe — the overlay slides off the viewport diagonally from top-left to bottom-right. HERO entrance: hero food image zooms from 110% to 100% while headline fades in from below. Feels delicious and inviting.',
+        es: '- PRELOADER: Overlay cálido ámbar o terracota. Centro: un icono de tenedor-y-cuchillo o plato dibujado con animación de trazo SVG (1s). SALIDA: wipe diagonal — el overlay se desliza fuera del viewport en diagonal de arriba-izquierda a abajo-derecha. Entrada al HERO: imagen hero de comida hace zoom de 110% a 100% mientras el titular aparece desde abajo. Se siente delicioso y acogedor.',
+      },
     }
   }
 
   // Finance / Legal / Consulting / B2B
   if (is('abogado', 'legal', 'law', 'bufete', 'jurídic', 'finanzas', 'finance', 'contab', 'accountin', 'consultor', 'consulting', 'audit', 'bank', 'invest', 'b2b', 'seguro', 'insurance', 'notari')) {
     return {
+      colorHint: {
+        en: '- Color palette: Deep navy (#0f1c3f) or charcoal as base, silver-blue (#4a6fa5) as accent, warm white as text. Projects authority, trust, and institutional credibility.',
+        es: '- Paleta: Azul marino profundo (#0f1c3f) o carbón como base, azul plateado (#4a6fa5) como acento, blanco cálido como texto. Proyecta autoridad y credibilidad institucional.',
+      },
+      themeHint: {
+        en: '- Use a DARK, authoritative theme. Finance and legal firms signal credibility through dark navy or charcoal backgrounds.',
+        es: '- Usa un tema OSCURO y autoritario. Las firmas legales y financieras transmiten credibilidad con fondos azul marino o carbón.',
+      },
       typo: {
         en: '- Typography: Use Libre Baskerville (headlines, weight 700) + IBM Plex Sans (body, weight 400-500) from Google Fonts. Authoritative, trustworthy, classical — signals expertise and gravitas.',
         es: '- Tipografía: Usa Libre Baskerville (títulos, weight 700) + IBM Plex Sans (cuerpo, weight 400-500) de Google Fonts. Autoritativo, confiable, clásico — transmite experiencia y peso.',
@@ -387,12 +457,24 @@ function detectIndustryProfile(niche: string): IndustryProfile {
         en: '- Custom cursor: A small precise dot (6px, solid) with a separate thin outer ring (1px, 22px diameter, gap between them). Both move together with clean inertia. No organic shapes. On hover: the ring contracts slightly. Controlled, exact, professional.',
         es: '- Cursor personalizado: Un punto pequeño y preciso (6px, sólido) con un anillo exterior fino separado (1px, 22px de diámetro, espacio entre ellos). Ambos se mueven juntos con inercia limpia. Sin formas orgánicas. Al hover: el anillo se contrae ligeramente. Controlado, exacto, profesional.',
       },
+      preloader: {
+        en: '- PRELOADER: Deep navy or charcoal overlay. Center: firm logotype + a thin precision progress bar (0 to 100%, 1.2s linear). EXIT: clean upward slide (cubic-bezier 0.76, 0, 0.24, 1) — controlled and decisive. HERO entrance: headline fades in from bottom with firm easing, certification badges slide in from the right. Projects authority and reliability.',
+        es: '- PRELOADER: Overlay azul marino profundo o gris antracita. Centro: logotipo firme + barra de progreso delgada de precisión (0 a 100%, 1.2s lineal). SALIDA: deslizamiento limpio hacia arriba (cubic-bezier 0.76, 0, 0.24, 1) — controlado y decisivo. Entrada al HERO: titular aparece desde abajo con easing firme, insignias de certificación entran desde la derecha. Proyecta autoridad y confiabilidad.',
+      },
     }
   }
 
   // Creative / Design / Agency / Art
   if (is('diseño', 'design', 'agencia', 'agency', 'creativo', 'creative', 'arte', 'art', 'fotograf', 'photograph', 'branding', 'studio', 'estudio', 'publicidad', 'advertising', 'media')) {
     return {
+      colorHint: {
+        en: '- Color palette: Choose ONE bold unexpected brand color (e.g. electric orange #ff4d00 or deep magenta #c2185b) against near-black. The palette IS the brand statement.',
+        es: '- Paleta: Elige UN color audaz e inesperado (ej. naranja eléctrico #ff4d00 o magenta #c2185b) sobre negro. La paleta ES el statement de la marca.',
+      },
+      themeHint: {
+        en: '- Use a DARK, editorial theme. Creative agencies command premium positioning through dark backgrounds with bold accent colors.',
+        es: '- Usa un tema OSCURO y editorial. Las agencias creativas captan posicionamiento premium con fondos oscuros y colores audaces.',
+      },
       typo: {
         en: '- Typography: Use Cabinet Grotesk (headlines, weight 800-900) + DM Sans (body, weight 400-500) from Google Fonts (import Cabinet Grotesk via @font-face from Fontshare CDN: fontshare.com). Editorial, opinionated, confident — the typography itself is part of the design statement.',
         es: '- Tipografía: Usa Cabinet Grotesk (títulos, weight 800-900) + DM Sans (cuerpo, weight 400-500) de Google Fonts (importa Cabinet Grotesk vía @font-face desde Fontshare CDN: fontshare.com). Editorial, con opinión, seguro — la tipografía en sí misma es parte del statement de diseño.',
@@ -405,12 +487,24 @@ function detectIndustryProfile(niche: string): IndustryProfile {
         en: '- Custom cursor: A dot that leaves a brief paint-stroke trail behind it — 5-7 ghost dots that follow the cursor position and fade out over 0.4s, creating a brushstroke effect. On hover over interactive elements: cursor becomes a circle with a rotating dashed border. Artistic and unexpected.',
         es: '- Cursor personalizado: Un punto que deja un breve rastro de pincelada — 5-7 puntos fantasma que siguen la posición del cursor y se desvanecen en 0.4s, creando un efecto de pincelada. Al hover sobre elementos interactivos: el cursor se convierte en un círculo con borde punteado rotatorio. Artístico e inesperado.',
       },
+      preloader: {
+        en: '- PRELOADER: Brand-colored overlay (use the primary brand accent). Center: abstract ink splash SVG that draws itself (stroke-dashoffset animation, 1s). EXIT: ink splatter — overlay dissolves outward with an irregular clip-path polygon animation, like paint splattering off a canvas. HERO entrance: headline "paints" in from left with a clip-path reveal, work portfolio images wipe in diagonally. Feels expressive, bold, and unexpected.',
+        es: '- PRELOADER: Overlay en el color de acento principal de la marca. Centro: splah de tinta SVG abstracto que se dibuja solo (animación stroke-dashoffset, 1s). SALIDA: salpicadura de tinta — overlay se disuelve hacia afuera con una animación de clip-path poligonal irregular, como pintura salpicando un lienzo. Entrada al HERO: titular se "pinta" desde la izquierda con revelación clip-path, Imágenes de portafolio entran en diagonal. Se siente expresivo, audaz e inesperado.',
+      },
     }
   }
 
   // Fitness / Sports / Gym
   if (is('gym', 'gimnasio', 'fitness', 'deporte', 'sport', 'entrenamiento', 'training', 'crossfit', 'atletismo', 'athlet', 'boxeo', 'boxing', 'personal trainer')) {
     return {
+      colorHint: {
+        en: '- Color palette: High-contrast black as base, bold red (#e63946) or electric yellow (#ffd60a) as accent, pure white as secondary. Signals power and intensity.',
+        es: '- Paleta: Negro de alto contraste como base, rojo audaz (#e63946) o amarillo eléctrico (#ffd60a) como acento, blanco puro como secundario. Transmite poder e intensidad.',
+      },
+      themeHint: {
+        en: '- Use a DARK, high-contrast theme. Fitness brands are built on black backgrounds with intense accent colors — signals strength and results.',
+        es: '- Usa un tema OSCURO y de alto contraste. Las marcas de fitness se construyen sobre negro con colores de acento intensos — transmite fuerza y resultados.',
+      },
       typo: {
         en: '- Typography: Use Oswald (headlines, weight 700, uppercase with letter-spacing 0.05em) + Montserrat (body, weight 400-600) from Google Fonts. Bold, condensed, powerful — like a sports poster that demands attention.',
         es: '- Tipografía: Usa Oswald (títulos, weight 700, uppercase con letter-spacing 0.05em) + Montserrat (cuerpo, weight 400-600) de Google Fonts. Audaz, condensado, poderoso — como un póster deportivo que exige atención.',
@@ -423,12 +517,24 @@ function detectIndustryProfile(niche: string): IndustryProfile {
         en: '- Custom cursor: A bold filled dot (12px, brand accent color) that emits energy pulse ripples every 2s — rings expanding from the cursor and fading. On hover over interactive elements: a fast ripple burst (3 rings in quick succession). High-energy, dynamic.',
         es: '- Cursor personalizado: Un punto sólido audaz (12px, color de acento de marca) que emite pulsos de energía en ondas cada 2s — anillos que se expanden desde el cursor y se desvanecen. Al hover sobre elementos interactivos: una ráfaga de ondas rápida (3 anillos en rápida sucesión). Alta energía, dinámico.',
       },
+      preloader: {
+        en: '- PRELOADER: Black overlay with bold red or brand accent color. Center: large uppercase brand name with a POWER-FILL animation (the text fills with white from bottom to top, like a power gauge). EXIT: split vertically — the overlay splits in half and both pieces slam to opposite edges (fast cubic-bezier, 0.4s). HERO entrance: headline SLAMS in from above with heavy impact (transform: translateY(-60px) to 0, with brief overshoot bounce). Maximum energy.',
+        es: '- PRELOADER: Overlay negro con rojo audaz o color de acento de marca. Centro: nombre de la marca en mayúsculas grandes con animación POWER-FILL (el texto se llena de blanco de abajo hacia arriba, como un indicador de potencia). SALIDA: split vertical — el overlay se divide a la mitad y ambas piezas se lanzan hacia los bordes opuestos (cubic-bezier rápido, 0.4s). Entrada al HERO: titular IMPACTA desde arriba con gran fuerza (transform: translateY(-60px) a 0, con pequeño rebote de sobreimpulso). Máxima energía.',
+      },
     }
   }
 
   // Education / Academy / Courses
   if (is('educación', 'education', 'academia', 'academy', 'escuela', 'school', 'universidad', 'university', 'course', 'curso', 'tutor', 'aprendizaje', 'learning', 'capacitación', 'training', 'colegio')) {
     return {
+      colorHint: {
+        en: '- Color palette: Royal blue (#4a6cf7) or teal (#0891b2) as primary, clean white as background, warm yellow (#fbbf24) as accent. Signals clarity and trustworthiness.',
+        es: '- Paleta: Azul royal (#4a6cf7) o teal (#0891b2) como primario, blanco limpio como fondo, amarillo cálido (#fbbf24) como acento. Transmite claridad y confianza.',
+      },
+      themeHint: {
+        en: '- Use a LIGHT, clean theme. Education brands thrive on bright backgrounds that signal clarity and accessibility.',
+        es: '- Usa un tema CLARO y limpio. Las marcas educativas prosperan con fondos brillantes que transmiten claridad y accesibilidad.',
+      },
       typo: {
         en: '- Typography: Use Nunito (headlines, weight 700-800) + Quicksand (body, weight 400-500) from Google Fonts. Friendly, rounded, approachable — communicates clarity, accessibility, and warmth without being childish.',
         es: '- Tipografía: Usa Nunito (títulos, weight 700-800) + Quicksand (cuerpo, weight 400-500) de Google Fonts. Amigable, redondeada, accesible — comunica claridad, accesibilidad y calidez sin ser infantil.',
@@ -441,12 +547,24 @@ function detectIndustryProfile(niche: string): IndustryProfile {
         en: '- Custom cursor: A soft rounded dot (16px) in a brand pastel color with a gentle drop shadow. On hover: the dot bounces gently (small keyframe animation, 0.2s) and changes to the brand accent color. Fun, non-intimidating, approachable.',
         es: '- Cursor personalizado: Un punto redondeado suave (16px) en un color pastel de marca con una sombra suave. Al hover: el punto rebota suavemente (pequeña animación de keyframe, 0.2s) y cambia al color de acento de marca. Divertido, no intimidante, accesible.',
       },
+      preloader: {
+        en: '- PRELOADER: Bright or soft brand-colored overlay. Center: an animated progress bar made of small colorful dots that fill from left to right (playful! not a plain bar). EXIT: overlay bounces upward — slight overshoot (spring easing, cubic-bezier 0.68, -0.6, 0.32, 1.6). HERO entrance: elements pop in with a subtle scale bounce (1.05 to 1.0). Friendly, approachable, welcoming.',
+        es: '- PRELOADER: Overlay brillante o suave en color de marca. Centro: barra de progreso animada hecha de puntos de colores que se llenan de izquierda a derecha (juguetona! no una barra plana). SALIDA: overlay rebota hacia arriba — pequeño sobreimpulso (spring easing, cubic-bezier 0.68, -0.6, 0.32, 1.6). Entrada al HERO: elementos aparecen con un sutil rebote de escala (1.05 a 1.0). Amigable, accesible, acogedor.',
+      },
     }
   }
 
   // Architecture / Real Estate / Construction
   if (is('arquitectura', 'architecture', 'bienes raíces', 'real estate', 'inmobiliaria', 'construcción', 'construction', 'diseño interior', 'interior design', 'properti', 'propiedad')) {
     return {
+      colorHint: {
+        en: '- Color palette: Warm concrete (#b5a99a) or slate grey (#708090) as primary, off-white (#fafaf8) as background, charcoal (#2c2c2c) as text. Communicates permanence and quality.',
+        es: '- Paleta: Concreto cálido (#b5a99a) o gris pizarra (#708090) como primario, blanco cálido (#fafaf8) como fondo, carbón (#2c2c2c) como texto. Comunica permanencia y calidad.',
+      },
+      themeHint: {
+        en: '- Use a LIGHT, minimal theme. Architecture and real estate brands communicate quality through negative space and light backgrounds.',
+        es: '- Usa un tema CLARO y minimalista. Las marcas de arquitectura comunican calidad a través del espacio negativo y fondos claros.',
+      },
       typo: {
         en: '- Typography: Use DM Sans (headlines, weight 700-800) + Source Serif Pro (body, weight 400) from Google Fonts. Clean with an architectural editorial touch — precise, structured, sophisticated.',
         es: '- Tipografía: Usa DM Sans (títulos, weight 700-800) + Source Serif Pro (cuerpo, weight 400) de Google Fonts. Limpio con un toque editorial arquitectónico — preciso, estructurado, sofisticado.',
@@ -459,6 +577,10 @@ function detectIndustryProfile(niche: string): IndustryProfile {
         en: '- Custom cursor: A diamond shape (square rotated 45°, 18px, 1.5px stroke, no fill) instead of a circle. Moves with precise inertia. On hover over interactive elements: fills with a semi-transparent brand color. Geometric, architectural, distinctive.',
         es: '- Cursor personalizado: Una forma de diamante (cuadrado rotado 45°, 18px, 1.5px de trazo, sin relleno) en vez de círculo. Se mueve con inercia precisa. Al hover sobre elementos interactivos: se rellena con un color de marca semi-transparente. Geométrico, arquitectónico, distintivo.',
       },
+      preloader: {
+        en: '- PRELOADER: White or stone-grey overlay. Center: a thin crosshair grid (like architectural graph paper) that extends outward line by line (SVG stroke animation, 1.5s). EXIT: the overlay slides upward with mechanical precision (linear timing, 0.5s). HERO entrance: content reveals behind a horizontal wipe from left to right. Structured, precise, architectural.',
+        es: '- PRELOADER: Overlay blanco o gris piedra. Centro: una cuadrícula de cruceta delgada (como papel cuadriculado arquitectónico) que se extiende hacia afuera línea por línea (animación de trazo SVG, 1.5s). SALIDA: el overlay se desliza hacia arriba con precisión mecánica (timing lineal, 0.5s). Entrada al HERO: el contenido se revela detrás de un wipe horizontal de izquierda a derecha. Estructurado, preciso, arquitectónico.',
+      },
     }
   }
 
@@ -466,6 +588,14 @@ function detectIndustryProfile(niche: string): IndustryProfile {
   // Analyze description + niche to pick the closest energy profile.
   // Default to clean geometric — universally premium, never wrong.
   return {
+    colorHint: {
+      en: '- Color palette: Analyze the business and choose emotionally appropriate colors: bold/energetic (red/orange on dark), trustworthy (blue/slate on white), creative (purple/pink on dark), natural (green on cream). Max 3 colors + 1 accent.',
+      es: '- Paleta: Analiza el negocio y elige colores emocionalmente apropiados: audaz/energético (rojo/naranja sobre oscuro), confiable (azul/pizarra sobre blanco), creativo (morado/rosa sobre oscuro), natural (verde sobre crema). Máx. 3 colores + 1 acento.',
+    },
+    themeHint: {
+      en: '- Theme: Infer from the business. Service/professional → light. Tech/luxury/night → dark. Health/education → light and warm. When in doubt: dark with colored accents converts better.',
+      es: '- Tema: Infiere del negocio. Servicios/profesional → claro. Tech/lujo/noche → oscuro. Salud/educación → claro y cálido. En caso de duda: oscuro con acentos de color convierte mejor.',
+    },
     typo: {
       en: '- Typography: Use Outfit (headlines, weight 700-900) + Inter (body, weight 400-500) from Google Fonts. Clean, versatile, and universally premium — adapt weight and spacing to match the specific business tone (tighter for professional, looser for approachable).',
       es: '- Tipografía: Usa Outfit (títulos, weight 700-900) + Inter (cuerpo, weight 400-500) de Google Fonts. Limpio, versátil y universalmente premium — adapta el peso y el espaciado al tono específico del negocio (más apretado para profesional, más espaciado para accesible).',
@@ -478,13 +608,21 @@ function detectIndustryProfile(niche: string): IndustryProfile {
       en: '- Custom cursor: A clean dot (10px, brand primary color) with a larger translucent ring that follows with 0.12s inertia lag. On hover: the ring snaps to the element and fills slightly. A timeless, professional custom cursor that elevates any site.',
       es: '- Cursor personalizado: Un punto limpio (10px, color primario de marca) con un anillo translucido más grande que sigue con 0.12s de inercia. Al hover: el anillo se ajusta al elemento y se rellena ligeramente. Un cursor personalizado atemporal y profesional que eleva cualquier sitio.',
     },
+    preloader: {
+      en: '- PRELOADER: Brand primary color overlay. Center: brand logo or wordmark animates in (scale 0.7 to 1.0 + opacity 0 to 1, 0.8s ease-out) + thin progress bar below (0 to 100%, 1.2s). EXIT: slides upward with cubic-bezier(0.76, 0, 0.24, 1), 0.7s. HERO entrance: all elements fade and slide in with 80ms stagger per element. Premium, universal, always works.',
+      es: '- PRELOADER: Overlay en el color primario de marca. Centro: logo o wordmark de la marca aparece animado (scale 0.7 a 1.0 + opacidad 0 a 1, 0.8s ease-out) + barra de progreso delgada debajo (0 a 100%, 1.2s). SALIDA: se desliza hacia arriba con cubic-bezier(0.76, 0, 0.24, 1), 0.7s. Entrada al HERO: todos los elementos aparecen con fade y slide con 80ms de stagger por elemento. Premium, universal, siempre funciona.',
+    },
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function generatePrompt(inputs: PromptInputs): string {
-  const { description, niche, vibe, sections, cta, lang = 'en' } = inputs
+  const {
+    description, niche, vibe, sections, cta, lang = 'en',
+    siteLang, whatsapp, instagram, facebook, tiktok,
+    logoAnnotation, clientLogos = [], assets = [], inspirations = [],
+  } = inputs
 
   // Resolve industry profile from niche BEFORE building the prompt
   const profile = detectIndustryProfile(niche || description || '')
@@ -495,6 +633,9 @@ export function generatePrompt(inputs: PromptInputs): string {
       .replace('__INDUSTRY_TYPO__', profile.typo[lang])
       .replace('__INDUSTRY_BG__', profile.bg[lang])
       .replace('__INDUSTRY_CURSOR__', profile.cursor[lang])
+      .replace('__INDUSTRY_PRELOADER__', profile.preloader[lang])
+      .replace('__INDUSTRY_COLOR__', profile.colorHint[lang])
+      .replace('__INDUSTRY_THEME__', profile.themeHint[lang])
 
   // Proxy object: every property access auto-resolves tokens
   const t = new Proxy(promptText[lang], {
@@ -550,6 +691,7 @@ export function generatePrompt(inputs: PromptInputs): string {
   lines.push(``)
   lines.push(t.premiumTitle)
   lines.push(t.premiumColorPsychology)
+  lines.push(t.premiumTheme)
   lines.push(t.premiumTypography)
   lines.push(t.premiumGlass)
   lines.push(t.premiumAnimations)
@@ -637,6 +779,176 @@ export function generatePrompt(inputs: PromptInputs): string {
   lines.push(t.cardAnimationVariety)
   lines.push(t.conversionMicroCopy)
   lines.push(t.layoutRandomization)
+
+  // ── Site Language ──────────────────────────────────────────────────────────
+  if (siteLang) {
+    lines.push(``)
+    if (lang === 'es') {
+      lines.push(`**Idioma del sitio web generado:**`)
+      lines.push(`- TODO el contenido del sitio web (textos, botones, menú, footer, testimonios, FAQ, meta tags) debe estar escrito COMPLETAMENTE en ${siteLang}. No uses inglés ni ningún otro idioma. Si el idioma no es español, adapta el tono y las expresiones culturalmente para que suene nativo, no como una traducción.`)
+    } else {
+      lines.push(`**Website output language:**`)
+      lines.push(`- ALL website content (text, buttons, navigation, footer, testimonials, FAQ, meta tags) must be written ENTIRELY in ${siteLang}. Do not mix languages. Adapt idioms, tone, and cultural expressions to feel native — not like a translation.`)
+    }
+  }
+
+  // ── WhatsApp Integration ──────────────────────────────────────────────────
+  if (whatsapp) {
+    const waMsg = lang === 'es'
+      ? encodeURIComponent(`Hola, vi tu sitio web y me gustaría obtener más información 👋`)
+      : encodeURIComponent(`Hi, I saw your website and I'd like to get more information 👋`)
+    const waLink = `https://wa.me/${whatsapp.replace(/[^0-9]/g, '')}?text=${waMsg}`
+    lines.push(``)
+    if (lang === 'es') {
+      lines.push(`**Integración de WhatsApp (CRÍTICO — todos los botones deben funcionar):**`)
+      lines.push(`- El número de WhatsApp del negocio es: ${whatsapp}`)
+      lines.push(`- El enlace de WhatsApp ya generado con mensaje es: ${waLink}`)
+      lines.push(`- TODOS los botones CTA principales (hero, mid-page, sticky bar, floating button) deben usar este enlace directamente.`)
+      lines.push(`- El botón flotante de WhatsApp (esquina inferior derecha) debe usar este enlace y el mensaje pre-cargado: "Hola, vi tu sitio web y me gustaría obtener más información".`)
+      lines.push(`- El mensaje debe sentirse cálido, humano y natural — NO automatizado ni genérico.`)
+    } else {
+      lines.push(`**WhatsApp Integration (CRITICAL — all buttons must be functional):**`)
+      lines.push(`- Business WhatsApp number: ${whatsapp}`)
+      lines.push(`- Pre-built WhatsApp link with message: ${waLink}`)
+      lines.push(`- ALL primary CTA buttons (hero, mid-page, sticky bar, floating button) must use this link directly.`)
+      lines.push(`- The floating WhatsApp button (bottom-right) must use this link with pre-loaded message: "Hi, I saw your website and I'd like to get more information".`)
+      lines.push(`- The message must feel warm, human, and natural — NOT automated or generic.`)
+    }
+  }
+
+  // ── Social Media Links ────────────────────────────────────────────────────
+  const hasSocials = instagram || facebook || tiktok
+  if (hasSocials) {
+    lines.push(``)
+    if (lang === 'es') {
+      lines.push(`**Redes sociales (íconos funcionales en el footer):**`)
+      lines.push(`- Los íconos de redes sociales en el footer deben ser FUNCIONALES con estos enlaces reales:`)
+      if (instagram) lines.push(`  · Instagram: ${instagram}`)
+      if (facebook) lines.push(`  · Facebook: ${facebook}`)
+      if (tiktok) lines.push(`  · TikTok: ${tiktok}`)
+      lines.push(`- SOLO muestra los íconos para las redes que tienen enlace. NO muestres íconos placeholder o con href="#".`)
+      lines.push(`- Al hacer clic, deben abrirse en una nueva pestaña (target="_blank" rel="noopener noreferrer").`)
+    } else {
+      lines.push(`**Social Media Links (functional icons in footer):**`)
+      lines.push(`- Footer social icons must be FUNCTIONAL with these real links:`)
+      if (instagram) lines.push(`  · Instagram: ${instagram}`)
+      if (facebook) lines.push(`  · Facebook: ${facebook}`)
+      if (tiktok) lines.push(`  · TikTok: ${tiktok}`)
+      lines.push(`- ONLY show icons for provided profiles. Do NOT show placeholder icons with href="#".`)
+      lines.push(`- All links must open in a new tab (target="_blank" rel="noopener noreferrer").`)
+    }
+  }
+
+  // ── Intelligent Chat Widget ───────────────────────────────────────────────
+  lines.push(``)
+  if (lang === 'es') {
+    lines.push(`**Widget de contacto inteligente:**`)
+    if (whatsapp) {
+      lines.push(`- Implementa un botón flotante de WhatsApp (esquina inferior derecha) con el enlace: ${`https://wa.me/${(whatsapp || '').replace(/[^0-9]/g, '')}`}`)
+      lines.push(`- El botón debe tener una animación de pulso sutil (caja de sombra respirando cada 2s) para atraer atención sin ser intrusivo.`)
+      lines.push(`- Al hacer hover: muestra un pequeño tooltip con el texto: "¡Escríbenos ahora! Respondemos en minutos 🚀" (o equivalente en el idioma del sitio).`)
+      lines.push(`- NO ubiques el botón siempre en el mismo lugar — basándote en la industria, colócalo en la esquina inferior ${niche?.toLowerCase().includes('derech') ? 'izquierda' : 'derecha'} para que no tape el contenido clave.`)
+    } else {
+      lines.push(`- Agrega un botón de chat flotante genérico (ícono de burbuja de chat) que abra un formulario de contacto simple o scroll suave al formulario de contacto.`)
+    }
+  } else {
+    lines.push(`**Intelligent Contact Widget:**`)
+    if (whatsapp) {
+      lines.push(`- Implement a floating WhatsApp button (bottom-right corner) linking to: ${`https://wa.me/${(whatsapp || '').replace(/[^0-9]/g, '')}`}`)
+      lines.push(`- The button must have a subtle pulse animation (breathing box-shadow every 2s) to attract attention without being intrusive.`)
+      lines.push(`- On hover: show a small tooltip: "Chat with us! We reply in minutes 🚀" (or equivalent in site language).`)
+      lines.push(`- Position it contextually — not always the same corner. Base the position on the page layout to avoid covering key content.`)
+    } else {
+      lines.push(`- Add a generic floating chat button (chat bubble icon) that smoothly scrolls to the contact form or opens a simple inline contact popup.`)
+    }
+  }
+
+  // ── Image Assets & Logo ───────────────────────────────────────────────────
+  // When logo/images are data URLs, we reference them by annotation only
+  // (base64 strings are too large for LLM prompt context, and are uploaded separately)
+  const logoDesc = logoAnnotation?.startsWith('data:')
+    ? (lang === 'es' ? '[Imagen de logo adjunta — ver sección de assets]' : '[Logo image attached — see assets section]')
+    : logoAnnotation
+  const validAssets = assets.filter(a => a.annotation)
+  const validClientLogos = clientLogos.filter(a => a.annotation || a.dataUrl)
+  const hasAssets = validAssets.length > 0 || logoAnnotation || validClientLogos.length > 0
+  if (hasAssets) {
+    lines.push(``)
+    if (lang === 'es') {
+      lines.push(`**Recursos visuales proporcionados por el cliente:**`)
+      lines.push(`- El cliente ha proporcionado sus propias imágenes. Para los elementos donde se especifican activos propios, NO uses fotos de stock de Unsplash — usa estas descripciones para referenciarlos.`)
+      if (logoAnnotation) {
+        lines.push(`- LOGO: ${logoDesc}. Úsalo en la navbar (altura: 32-40px) y en el footer. NO generes texto como sustituto del logo.`)
+      }
+      if (validClientLogos.length > 0) {
+        lines.push(`- LOGOS DE CLIENTES / Partners: Hay ${validClientLogos.length} imagen(es) adjunta(s) que corresponden a marcas que confían en el cliente. Úsalas EXCLUSIVAMENTE en la sección de 'Social Proof' o Testimonios.`)
+      }
+      validAssets.forEach((asset, i) => {
+        const desc = asset.dataUrl
+          ? `[Imagen ${i + 1} adjunta] — ${asset.annotation}`
+          : asset.annotation
+        lines.push(`- IMAGEN ${i + 1}: ${desc}. Posiciónala donde tenga más impacto visual según el contenido de esa sección.`)
+      })
+      lines.push(`- IMPORTANTE: El cliente cargará estas imágenes manualmente en el proyecto. Usa <img src="./logo.png" /> o nombres descriptivos como placeholders — el cliente los reemplazará.`)
+    } else {
+      lines.push(`**Client-provided visual assets:**`)
+      lines.push(`- The client has provided their own images. For elements where real assets are specified, do NOT use Unsplash stock photos — use these descriptions to reference them.`)
+      if (logoAnnotation) {
+        lines.push(`- LOGO: ${logoDesc}. Use it in the navbar (height: 32-40px) and in the footer. Do NOT generate text as a logo substitute.`)
+      }
+      if (validClientLogos.length > 0) {
+        lines.push(`- CLIENT / PARTNER LOGOS: There are ${validClientLogos.length} attached images representing brands that trust the client. Use them EXCLUSIVELY in the 'Social Proof' or Testimonials section.`)
+      }
+      validAssets.forEach((asset, i) => {
+        const desc = asset.dataUrl
+          ? `[Image ${i + 1} attached] — ${asset.annotation}`
+          : asset.annotation
+        lines.push(`- IMAGE ${i + 1}: ${desc}. Position it where it will have the most visual impact in the relevant section.`)
+      })
+      lines.push(`- IMPORTANT: The client will upload these images manually to the project. Use <img src="./hero.jpg" /> or descriptive names as placeholders — the client will replace them.`)
+    }
+  }
+
+  // ── Inspiration References ────────────────────────────────────────────────
+  const validInspirations = inspirations.filter(insp => insp.dataUrl)
+  if (validInspirations.length > 0) {
+    lines.push(``)
+    if (lang === 'es') {
+      lines.push(`**Referencias de inspiración visual adjuntas (analiza quirúrgicamente):**`)
+      lines.push(`- El cliente ha adjuntado en el archivo ZIP ${validInspirations.length} captura(s) de pantalla (referenciadas como '5_inspiration_1', etc.). Analiza el diseño de los archivos adjuntos.`)
+      validInspirations.forEach((insp, i) => {
+        lines.push(`  * ${i + 1}. Archivo visual '5_inspiration_${i + 1}': ${insp.annotation || 'Referencia de estilo visual general.'}`)
+      })
+      lines.push(`- ADAPTA (no copies) estos patrones a la identidad y contenido de ESTA marca. El objetivo es capturar la misma SENSACIÓN y nivel de calidad, con identidad única.`)
+    } else {
+      lines.push(`**Attached visual inspirations (analyze surgically):**`)
+      lines.push(`- The client has provided ${validInspirations.length} screenshot(s) in the ZIP file (referenced as '5_inspiration_1', etc.). Analyze these attached files.`)
+      validInspirations.forEach((insp, i) => {
+        lines.push(`  * ${i + 1}. Visual file '5_inspiration_${i + 1}': ${insp.annotation || 'General visual style reference.'}`)
+      })
+      lines.push(`- ADAPT (do not copy) these patterns to THIS brand's identity. Capture the same FEEL and quality level, with a unique presentation.`)
+    }
+  }
+
+  // ── Elite Marketing Strategy Layer ───────────────────────────────────────
+  lines.push(``)
+  if (lang === 'es') {
+    lines.push(`**⚡ Estrategia de conversión de élite (frameworks probados por los mejores del mundo):**`)
+    lines.push(`- OFERTA IRRESISTIBLE (Alex Hormozi — Value Equation): El héroe de la página debe comunicar una oferta tan obvia que rechazarla se sienta estúpido. Formula: [Alto Valor Percibido] + [Alta Probabilidad de Éxito] + [Bajo Tiempo para Resultado] + [Bajo Riesgo]. Ejemplo: "Consigue tu sitio web profesional en 24h — o te devolvemos el dinero sin preguntas".`)
+    lines.push(`- EMBUDO DE COMPROMISOS ESCALONADOS (Russell Brunson — Value Ladder): No pidas el mayor compromiso de entrada. Estructura micro-CTAs que escalen: (1) Micro-compromiso: "Ver cómo funciona →" (no cuesta nada), (2) Compromiso suave: "Obtén una muestra gratis" (bajo riesgo), (3) Compromiso real: el servicio/producto principal. Cada CTA en la página debe corresponder a un escalón diferente.`)
+    lines.push(`- PERSUASIÓN POR RECIPROCIDAD (Robert Cialdini): Ofrece PRIMERO algo de valor real sin pedir nada a cambio — una guía, una consulta gratuita, un recurso. Esto activa el principio de reciprocidad: el visitante sentirá la obligación subconsciente de devolver el favor. Menciona esto en una sección de la página.`)
+    lines.push(`- STORYTELLING HEROICO (Andrés Bilbao / David Rodríguez): El copy no vende el producto — vende la TRANSFORMACIÓN. El visitante es el héroe, la marca es el guía sabio. Estructura: Así estabas antes → Así es la vida con nosotros → Únete a ellos. Esta narrativa debe atravesar toda la página.`)
+    lines.push(`- URGENCIA REAL (no falsa escasez): Crea urgencia basada en consecuencias reales, no en contadores falsos. Ejemplos genuinos: "Cada mes sin un sitio web es dinero que va a tu competencia", "Tomamos solo 5 clientes nuevos por mes para garantizar calidad", "Los precios suben en [próxima_temporada]". La urgencia debe sentirse honesta y creíble.`)
+    lines.push(`- PRUEBA SOCIAL ESPECÍFICA: Los testimonios deben incluir métricas reales y específicas (ROI, tiempo ahorrado, ventas aumentadas, clientes ganados). NUNCA elogios vagos. El cerebro confía en los números: "Pasé de 0 a 47 clientes en 3 meses" convierte 10x más que "Excelente servicio".`)
+  } else {
+    lines.push(`**⚡ Elite Conversion Strategy (frameworks proven by the world's best marketers):**`)
+    lines.push(`- GRAND SLAM OFFER (Alex Hormozi — Value Equation): The hero section must communicate an offer so obvious that refusing it feels stupid. Formula: [High Perceived Value] + [High Success Probability] + [Short Time to Result] + [Low Risk]. Example: "Get your professional website in 24h — or your money back, no questions asked".`)
+    lines.push(`- COMMITMENT FUNNEL (Russell Brunson — Value Ladder): Never ask for the biggest commitment upfront. Structure micro-CTAs that escalate: (1) Micro-commitment: "See how it works →" (zero cost), (2) Soft commitment: "Get a free sample" (low risk), (3) Real commitment: the main service/product. Each CTA on the page should correspond to a different step.`)
+    lines.push(`- RECIPROCITY PERSUASION (Robert Cialdini): Offer something of REAL value first, asking nothing in return — a guide, a free consultation, a resource. This activates the reciprocity principle: the visitor feels a subconscious obligation to give back. Mention this in a section on the page.`)
+    lines.push(`- HEROIC STORYTELLING (Spencer Hoff / Brian Tracy): Copy doesn't sell the product — it sells the TRANSFORMATION. The visitor is the hero, the brand is the wise guide. Structure: How you were before → How life is with us → Join them. This narrative should run through the entire page.`)
+    lines.push(`- REAL URGENCY (not fake scarcity): Create urgency from real consequences, not fake countdown timers. Genuine examples: "Every month without a website is money going to your competitor", "We take only 5 new clients per month to guarantee quality", "Prices increase next quarter". Urgency must feel honest and believable.`)
+    lines.push(`- SPECIFIC SOCIAL PROOF: Testimonials must include real specific metrics (ROI, time saved, sales increased, clients gained). NEVER vague praise. The brain trusts numbers: "Went from 0 to 47 clients in 3 months" converts 10x better than "Great service".`)
+  }
 
   return lines.join('\n').trim()
 }
