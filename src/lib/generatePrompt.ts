@@ -830,7 +830,7 @@ export function generatePrompt(inputs: PromptInputs): string {
       if (tiktok) lines.push(`  · TikTok: ${tiktok}`)
       if (linkedin) lines.push(`  · LinkedIn: ${linkedin}`)
       if (customLink) lines.push(`  · Enlace personalizado: ${customLink}`)
-      lines.push(`- SOLO muestra los íconos para las redes que tienen enlace. NO muestres íconos placeholder o con href="#".`)
+      lines.push(`- IMPORTANTE: SOLO muestra los íconos para las redes que SÍ tienen un enlace explícito aquí arriba. Las opciones NO proporcionadas (ej. si falta TikTok o LinkedIn) NO DEBEN aparecer bajo ninguna circunstancia en tu diseño, ni siquiera como íconos ocultos, inactivos o con href="#". Omitelas por completo.`)
       lines.push(`- Al hacer clic, deben abrirse en una nueva pestaña (target="_blank" rel="noopener noreferrer").`)
     } else {
       lines.push(`**Social Media Links (functional icons in footer):**`)
@@ -840,7 +840,7 @@ export function generatePrompt(inputs: PromptInputs): string {
       if (tiktok) lines.push(`  · TikTok: ${tiktok}`)
       if (linkedin) lines.push(`  · LinkedIn: ${linkedin}`)
       if (customLink) lines.push(`  · Custom Link: ${customLink}`)
-      lines.push(`- ONLY show icons for provided profiles. Do NOT show placeholder icons with href="#".`)
+      lines.push(`- IMPORTANT: ONLY show icons for networks that DO have an explicit link provided above. Options NOT provided (e.g. if TikTok or LinkedIn is missing) MUST NOT appear under any circumstances in your design, not even as hidden/inactive icons or with href="#". Omit them completely from the HTML.`)
       lines.push(`- All links must open in a new tab (target="_blank" rel="noopener noreferrer").`)
     }
   }
