@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+
 import { chatWithAssistant } from '../lib/gemini';
 import { Sparkles, Loader2, Paperclip, Send, Check, X, User, Bot } from 'lucide-react';
 

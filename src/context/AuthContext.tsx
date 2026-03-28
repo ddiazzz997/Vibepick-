@@ -78,7 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const fingerprint = result.visitorId
 
             // 3. Check database using RPC
-            const { data: hasRegistered, error: rpcError } = await supabase.rpc('check_device_fingerprint', { p_fingerprint: fingerprint })
+            const { data: hasRegistered } = await supabase.rpc('check_device_fingerprint', { p_fingerprint: fingerprint })
 
             if (hasRegistered) {
                 // Set local storage just in case it was cleared by the user
