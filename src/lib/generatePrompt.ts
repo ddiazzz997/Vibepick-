@@ -10,6 +10,8 @@ export interface PromptInputs {
   instagram?: string         // Instagram URL
   facebook?: string          // Facebook URL
   tiktok?: string            // TikTok URL
+  linkedin?: string          // LinkedIn URL
+  customLink?: string        // Custom Website / Link URL
   logoAnnotation?: string    // Text annotation for logo image
   clientLogos?: Array<{ dataUrl: string; annotation: string }> // Client logos / Testimonials
   assets?: Array<{ dataUrl: string; annotation: string }> // Images with annotations
@@ -620,7 +622,7 @@ function detectIndustryProfile(niche: string): IndustryProfile {
 export function generatePrompt(inputs: PromptInputs): string {
   const {
     description, niche, vibe, sections, cta, lang = 'en',
-    siteLang, whatsapp, instagram, facebook, tiktok,
+    siteLang, whatsapp, instagram, facebook, tiktok, linkedin, customLink,
     logoAnnotation, clientLogos = [], assets = [], inspirations = [],
   } = inputs
 
@@ -817,7 +819,7 @@ export function generatePrompt(inputs: PromptInputs): string {
   }
 
   // ── Social Media Links ────────────────────────────────────────────────────
-  const hasSocials = instagram || facebook || tiktok
+  const hasSocials = instagram || facebook || tiktok || linkedin || customLink
   if (hasSocials) {
     lines.push(``)
     if (lang === 'es') {
@@ -826,6 +828,8 @@ export function generatePrompt(inputs: PromptInputs): string {
       if (instagram) lines.push(`  · Instagram: ${instagram}`)
       if (facebook) lines.push(`  · Facebook: ${facebook}`)
       if (tiktok) lines.push(`  · TikTok: ${tiktok}`)
+      if (linkedin) lines.push(`  · LinkedIn: ${linkedin}`)
+      if (customLink) lines.push(`  · Enlace personalizado: ${customLink}`)
       lines.push(`- SOLO muestra los íconos para las redes que tienen enlace. NO muestres íconos placeholder o con href="#".`)
       lines.push(`- Al hacer clic, deben abrirse en una nueva pestaña (target="_blank" rel="noopener noreferrer").`)
     } else {
@@ -834,6 +838,8 @@ export function generatePrompt(inputs: PromptInputs): string {
       if (instagram) lines.push(`  · Instagram: ${instagram}`)
       if (facebook) lines.push(`  · Facebook: ${facebook}`)
       if (tiktok) lines.push(`  · TikTok: ${tiktok}`)
+      if (linkedin) lines.push(`  · LinkedIn: ${linkedin}`)
+      if (customLink) lines.push(`  · Custom Link: ${customLink}`)
       lines.push(`- ONLY show icons for provided profiles. Do NOT show placeholder icons with href="#".`)
       lines.push(`- All links must open in a new tab (target="_blank" rel="noopener noreferrer").`)
     }

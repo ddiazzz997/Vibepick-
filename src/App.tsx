@@ -77,6 +77,8 @@ export default function App() {
   const [instagram, setInstagram] = useState('')
   const [facebook, setFacebook] = useState('')
   const [tiktok, setTiktok] = useState('')
+  const [linkedin, setLinkedin] = useState('')
+  const [customLink, setCustomLink] = useState('')
   // Step 7 — Site Language
   const [siteLang, setSiteLang] = useState('Español')
   // Step 8 — Asset Uploads
@@ -112,12 +114,14 @@ export default function App() {
         instagram: instagram || undefined,
         facebook: facebook || undefined,
         tiktok: tiktok || undefined,
+        linkedin: linkedin || undefined,
+        customLink: customLink || undefined,
         logoAnnotation: logoAnnotation || undefined,
         clientLogos,
         assets,
         inspirations,
       }),
-    [desc, effectiveNiche, effectiveVibe, sections, cta, lang, siteLang, whatsappCode, whatsappNumber, instagram, facebook, tiktok, logoAnnotation, clientLogos, assets, inspirations],
+    [desc, effectiveNiche, effectiveVibe, sections, cta, lang, siteLang, whatsappCode, whatsappNumber, instagram, facebook, tiktok, linkedin, customLink, logoAnnotation, clientLogos, assets, inspirations],
   )
 
   /* Handle image paste */
@@ -494,6 +498,47 @@ export default function App() {
                             value={tiktok}
                             onChange={(e) => setTiktok(e.target.value)}
                             placeholder="https://tiktok.com/@tu_usuario"
+                            className="w-full bg-transparent text-sm text-white placeholder-[var(--text-dim)] outline-none border-none"
+                          />
+                        </div>
+                      </motion.div>
+
+                      {/* LinkedIn */}
+                      <motion.div whileHover={{ scale: 1.01 }} className="flex items-center gap-0 rounded-xl border border-[var(--border)] overflow-hidden bg-[#0A66C2]/5 hover:border-[#0A66C2]/40 transition-colors duration-200" style={{ borderLeft: '3px solid #0A66C2' }}>
+                        <div className="flex items-center justify-center w-14 h-14 shrink-0" style={{ background: 'rgba(10,102,194,0.08)' }}>
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="#0A66C2" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
+                          </svg>
+                        </div>
+                        <div className="flex-1 pr-3">
+                          <p className="text-[10px] font-semibold uppercase tracking-widest mb-0.5" style={{ color: '#0A66C2' }}>LinkedIn</p>
+                          <input
+                            type="url"
+                            value={linkedin}
+                            onChange={(e) => setLinkedin(e.target.value)}
+                            placeholder="https://linkedin.com/in/tu_perfil"
+                            className="w-full bg-transparent text-sm text-white placeholder-[var(--text-dim)] outline-none border-none"
+                          />
+                        </div>
+                      </motion.div>
+
+                      {/* Enlace Personalizado */}
+                      <motion.div whileHover={{ scale: 1.01 }} className="flex items-center gap-0 rounded-xl border border-[var(--border)] overflow-hidden bg-white/5 hover:border-white/20 transition-colors duration-200" style={{ borderLeft: '3px solid #64748B' }}>
+                        <div className="flex items-center justify-center w-14 h-14 shrink-0" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                          </svg>
+                        </div>
+                        <div className="flex-1 pr-3">
+                          <p className="text-[10px] font-semibold uppercase tracking-widest mb-0.5" style={{ color: '#94A3B8' }}>
+                            {lang === 'es' ? 'Otro Enlace' : 'Other Link'}
+                          </p>
+                          <input
+                            type="url"
+                            value={customLink}
+                            onChange={(e) => setCustomLink(e.target.value)}
+                            placeholder="https://tudominio.com"
                             className="w-full bg-transparent text-sm text-white placeholder-[var(--text-dim)] outline-none border-none"
                           />
                         </div>
