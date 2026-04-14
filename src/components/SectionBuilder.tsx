@@ -7,6 +7,7 @@ import {
   ChevronUp, ChevronDown,
 } from 'lucide-react'
 import { useLang } from '../lib/i18n'
+import { AIFieldAssistant } from './AIFieldAssistant'
 
 const ALL_SECTIONS = [
   'Hero', 'Social Proof', 'Features', 'How It Works', 'Testimonials',
@@ -34,7 +35,7 @@ interface Props {
 }
 
 export default function SectionBuilder({ selected, onChange }: Props) {
-  const { t } = useLang()
+  const { t, lang } = useLang()
   const available = ALL_SECTIONS.filter((s) => !selected.includes(s))
 
   const moveItem = useCallback((from: number, to: number) => {
@@ -50,10 +51,12 @@ export default function SectionBuilder({ selected, onChange }: Props) {
       {/* ── Selected / active layout ── */}
       {selected.length > 0 && (
         <div>
-          <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-widest mb-3 flex items-center gap-2.5">
-            <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 pulse" />
-            {t.yourPage}
-          </p>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-widest flex items-center gap-2.5">
+              <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 pulse" />
+              {t.yourPage}
+            </p>
+          </div>
           <Reorder.Group
             axis="y"
             values={selected}
@@ -165,6 +168,16 @@ export default function SectionBuilder({ selected, onChange }: Props) {
           </div>
         </div>
       )}
+
+      {/* ── Daniel AI (Section Assistant) ── */}
+      <div className="mt-6 flex justify-start">
+        <AIFieldAssistant
+          fieldType="sectionBuilder"
+          contextData={{ module: 'sectionBuilder' }}
+          onSelect={() => { }}
+          language={lang}
+        />
+      </div>
     </div>
   )
 }

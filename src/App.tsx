@@ -21,6 +21,19 @@ import HowItWorks from './components/HowItWorks'
 import FAQ from './components/FAQ'
 import PaywallModal from './components/PaywallModal'
 import { AIFieldAssistant } from './components/AIFieldAssistant'
+import AdminDashboard from './components/AdminDashboard'
+import RetentionPopup from './components/RetentionPopup'
+import { useSessionTracker } from './hooks/useSessionTracker'
+import Navbar from './components/Navbar'
+import SocialProofCounter from './components/SocialProofCounter'
+import PricingSection from './components/PricingSection'
+import SiteProgressBar from './components/SiteProgressBar'
+import CreditsModal from './components/CreditsModal'
+import AffiliatesSection from './components/AffiliatesSection'
+import { useCredits } from './hooks/useCredits'
+import TestimonialsCarousel from './components/TestimonialsCarousel'
+import BadgesDisplay from './components/BadgesDisplay'
+import CreditsBadge from './components/CreditsBadge'
 /* ── Animation variants ── */
 const sectionVariants = {
   hidden: { opacity: 0, y: 28, filter: 'blur(6px)' },
@@ -59,10 +72,22 @@ function Step({ n, title, sub }: { n: number; title: string; sub?: string }) {
 /* ── App ── */
 export default function App() {
   const { lang, t } = useLang()
-  const { user, profile, isLoading, setShowAuth, signOut, incrementPromptCount } = useAuth()
+  const { user, profile, isLoading, setShowAuth, signOut, incrementPromptCount, fullUser } = useAuth()
+
+  // ── Admin dashboard ─────────────────────────────────
+  const isAdmin = new URLSearchParams(window.location.search).get('admin') === 'vibepick2026'
 
   const [showPlatform, setShowPlatform] = useState(false)
   const [showPaywall, setShowPaywall] = useState(false)
+
+  // ── Credits system ───────────────────────────────────
+  const isPro = profile?.is_pro ?? false
+  const {
+    credits,
+    showCreditModal,
+    setShowCreditModal,
+    spendCredit,
+  } = useCredits(!!user, isPro)
   const [desc, setDesc] = useState('')
   const [niche, setNiche] = useState('')
   const [customNiche, setCustomNiche] = useState('')
@@ -82,10 +107,12 @@ export default function App() {
   // Step 7 — Site Language
   const [siteLang, setSiteLang] = useState('Español')
   // Step 8 — Asset Uploads
+  const [logoDataUrl, setLogoDataUrl] = useState('')
   const [logoAnnotation, setLogoAnnotation] = useState('')
-  const [clientLogos, setClientLogos] = useState<Array<{ dataUrl: string; annotation: string }>>([])
-  const [assets, setAssets] = useState<Array<{ dataUrl: string; annotation: string }>>([])
-  const [inspirations, setInspirations] = useState<Array<{ dataUrl: string; annotation: string }>>([])
+  const [assets, setAssets] = useState<Array<{ dataUrl: string; annotation: string; isVideo?: boolean }>>([{ dataUrl: '', annotation: '', isVideo: false }])
+  const [inspirations, setInspirations] = useState<Array<{ dataUrl: string; annotation: string }>>([{ dataUrl: '', annotation: '' }])
+  // Step 8b — Testimonials
+  const [testimonials, setTestimonials] = useState<Array<{ name: string; role: string; text: string; photo: string }>>([{ name: '', role: '', text: '', photo: '' }])
 
   const formRef = useRef<HTMLDivElement>(null)
   const effectiveNiche = customNiche || niche
@@ -116,12 +143,13 @@ export default function App() {
         tiktok: tiktok || undefined,
         linkedin: linkedin || undefined,
         customLink: customLink || undefined,
+        logoDataUrl: logoDataUrl || undefined,
         logoAnnotation: logoAnnotation || undefined,
-        clientLogos,
         assets,
         inspirations,
+        testimonials,
       }),
-    [desc, effectiveNiche, effectiveVibe, sections, cta, lang, siteLang, whatsappCode, whatsappNumber, instagram, facebook, tiktok, linkedin, customLink, logoAnnotation, clientLogos, assets, inspirations],
+    [desc, effectiveNiche, effectiveVibe, sections, cta, lang, siteLang, whatsappCode, whatsappNumber, instagram, facebook, tiktok, linkedin, customLink, logoDataUrl, logoAnnotation, assets, inspirations, testimonials],
   )
 
   /* Handle image paste */
@@ -148,6 +176,10 @@ export default function App() {
     setShowPlatform(true)
   }, [])
 
+  // ── Session tracker (fires when user is authenticated) ──
+  const trackerUser = fullUser ? { email: fullUser.email, name: `${fullUser.firstName} ${fullUser.lastName}` } : null
+  useSessionTracker(trackerUser, profile?.prompt_count ?? 0)
+
   /* Handle CTA clicks → open auth or go to platform */
   const handleCTAClick = useCallback(() => {
     if (user) {
@@ -157,55 +189,138 @@ export default function App() {
     }
   }, [user, setShowAuth])
 
-  /* Handle prompt copy → check usage */
-  const isLocked = Boolean(user && profile && !profile.is_pro && profile.prompt_count >= 2)
+  /* Handle prompt copy → credit-gated */
+  const isLocked = Boolean(user && !isPro && credits <= 0)
 
   const handlePromptCopy = useCallback(async () => {
-    if (!user || !profile || profile.is_pro) return
-    await incrementPromptCount()
-  }, [user, profile, incrementPromptCount])
+    if (!user) return
+    if (!isPro) {
+      const allowed = spendCredit()
+      if (!allowed) return
+      await incrementPromptCount()
+    }
+  }, [user, isPro, spendCredit, incrementPromptCount])
 
   const handleExportZip = useCallback(async () => {
     try {
+      const filesToExport: { path: string; contents: string | Blob; isBase64Image?: boolean }[] = []
+      filesToExport.push({ path: 'project_instructions.md', contents: prompt })
+
+      const addImageObj = (dataUrl: string, path: string) => {
+        if (!dataUrl || !dataUrl.startsWith('data:')) return
+        const arr = dataUrl.split(',')
+        if (arr.length < 2) return
+        const b64 = arr[1]
+        filesToExport.push({ path, contents: b64, isBase64Image: true })
+      }
+
+      addImageObj(logoDataUrl, 'public/logo.png')
+      assets.forEach((a, i) => addImageObj(a.dataUrl, `public/asset_${i + 1}.png`))
+      testimonials.forEach((t, i) => { if (t.photo) addImageObj(t.photo, `public/testimonial_${i + 1}.jpg`) })
+      inspirations.forEach((insp, i) => addImageObj(insp.dataUrl, `design_references/inspiration_${i + 1}.png`))
+
+      // ATTEMPT FILE SYSTEM ACCESS API
+      if ('showDirectoryPicker' in window) {
+        try {
+          const dirHandle = await (window as any).showDirectoryPicker({
+            mode: 'readwrite',
+            startIn: 'desktop'
+          });
+
+          const projectDir = await dirHandle.getDirectoryHandle(`proyecto_vibepick_${new Date().getTime()}`, { create: true });
+
+          const writeHandle = async (parentHandle: any, pathParts: string[], fileEntry: any) => {
+            let currentDir = parentHandle;
+            for (let i = 0; i < pathParts.length - 1; i++) {
+              currentDir = await currentDir.getDirectoryHandle(pathParts[i], { create: true });
+            }
+            const fileName = pathParts[pathParts.length - 1];
+            const fileHandle = await currentDir.getFileHandle(fileName, { create: true });
+            const writable = await fileHandle.createWritable();
+
+            if (fileEntry.isBase64Image) {
+              const byteString = atob(fileEntry.contents as string);
+              const ab = new ArrayBuffer(byteString.length);
+              const ia = new Uint8Array(ab);
+              for (let i = 0; i < byteString.length; i++) {
+                ia[i] = byteString.charCodeAt(i);
+              }
+              const blob = new Blob([ab], { type: 'image/png' });
+              await writable.write(blob);
+            } else {
+              await writable.write(fileEntry.contents);
+            }
+            await writable.close();
+          }
+
+          for (const fileItem of filesToExport) {
+            const parts = fileItem.path.split('/');
+            await writeHandle(projectDir, parts, fileItem);
+          }
+
+          if (!user || !profile || profile.is_pro) return
+          if (!isPro) {
+            const allowed = spendCredit()
+            if (!allowed) return
+            await incrementPromptCount()
+          }
+          return; // SUCCESS!
+
+        } catch (fsError: any) {
+          if (fsError.name === 'AbortError') return;
+          console.warn('File System API failed, falling back to ZIP', fsError);
+        }
+      }
+
+      // FALLBACK TO JSZIP
       const JSZip = (await import('jszip')).default
       const fileSaver = await import('file-saver')
       const saveAs = fileSaver.saveAs || fileSaver.default?.saveAs || fileSaver.default
 
       const zip = new JSZip()
-      zip.file('1_prompt_vibepick.txt', prompt)
-
-      const addImage = (dataUrl: string, filename: string) => {
-        if (!dataUrl || !dataUrl.startsWith('data:')) return
-        const arr = dataUrl.split(',')
-        if (arr.length < 2) return
-        const b64 = arr[1]
-        const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/png'
-        const ext = mime.split('/')[1] || 'png'
-        zip.file(`${filename}.${ext}`, b64, { base64: true })
+      for (const fileItem of filesToExport) {
+        if (fileItem.isBase64Image) {
+          zip.file(fileItem.path, fileItem.contents as string, { base64: true })
+        } else {
+          zip.file(fileItem.path, fileItem.contents as string)
+        }
       }
 
-      addImage(logoAnnotation, '2_logo')
-      clientLogos.forEach((c, i) => addImage(c.dataUrl, `3_client_logo_${i + 1}`))
-      assets.forEach((a, i) => addImage(a.dataUrl, `4_asset_${i + 1}`))
-      inspirations.forEach((insp, i) => addImage(insp.dataUrl, `5_inspiration_${i + 1}`))
-
       const blob = await zip.generateAsync({ type: 'blob' })
-      saveAs(blob, `vibepick_project_${new Date().getTime()}.zip`)
+      saveAs(blob, `proyecto_vibepick_${new Date().getTime()}.zip`)
 
       if (!user || !profile || profile.is_pro) return
       await incrementPromptCount()
     } catch (err) {
-      console.error('Error generating zip', err)
+      console.error('Error generating export', err)
     }
-  }, [prompt, logoAnnotation, clientLogos, assets, user, profile, incrementPromptCount])
+  }, [prompt, logoDataUrl, assets, testimonials, inspirations, user, profile, incrementPromptCount])
 
   if (isLoading) return null
 
+  // ── Admin panel ─────────────────────────────────────
+  if (isAdmin) return <AdminDashboard />
+
   return (
     <>
-      <LangToggle />
+      {/* Retention popup for power users */}
+      {user && profile && (
+        <RetentionPopup
+          sessionCount={fullUser?.sessionCount ?? 0}
+          totalMinutes={fullUser?.totalMinutes ?? 0}
+          isPro={profile.is_pro}
+          firstName={profile.first_name}
+        />
+      )}
+      {showPlatform && <LangToggle />}
       <AuthModal onSuccess={handleAuthSuccess} />
       <PaywallModal show={showPaywall} />
+      <CreditsModal
+        show={showCreditModal}
+        credits={credits}
+        onClose={() => setShowCreditModal(false)}
+        onUpgrade={() => setShowCreditModal(false)}
+      />
 
       <AnimatePresence>
         {showPlatform ? (
@@ -245,8 +360,12 @@ export default function App() {
                             {profile.first_name[0]}
                           </div>
                           <span className="text-sm text-white font-medium">{t.authGreeting}, {profile.first_name}</span>
+                          <CreditsBadge credits={credits} isPro={isPro} />
                           <button
-                            onClick={signOut}
+                            onClick={() => {
+                              signOut()
+                              setShowPlatform(false)
+                            }}
                             className="text-xs text-[var(--text-dim)] hover:text-white ml-2 cursor-pointer bg-transparent border-none transition-colors"
                           >
                             {t.authLogout}
@@ -297,6 +416,38 @@ export default function App() {
 
               {/* Platform form */}
               <main ref={formRef} className="max-w-xl mx-auto px-5 pb-24">
+                {/* ── Site Progress Bar ── */}
+                <SiteProgressBar
+                  desc={desc}
+                  niche={effectiveNiche}
+                  vibe={effectiveVibe}
+                  sections={sections}
+                  cta={cta}
+                  whatsappNumber={whatsappNumber}
+                  logoDataUrl={logoDataUrl}
+                  assetUrl={assets[0]?.dataUrl || ''}
+                  testimonialText={testimonials[0]?.text || ''}
+                />
+                <BadgesDisplay
+                  promptCount={profile?.prompt_count ?? 0}
+                  siteScore={(() => {
+                    let s = 0
+                    if (desc.trim().length > 10) s += 20
+                    if (effectiveNiche) s += 15
+                    if (effectiveVibe) s += 15
+                    if (sections.length >= 4) s += 10
+                    if (cta.trim().length > 2) s += 10
+                    if (whatsappNumber.length > 5) s += 10
+                    if (logoDataUrl) s += 10
+                    if (assets[0]?.dataUrl) s += 5
+                    if (testimonials[0]?.text?.trim().length > 5) s += 5
+                    return s
+                  })()}
+                  socialCount={[instagram, facebook, tiktok, linkedin].filter(v => v.trim()).length}
+                  hasLogo={!!logoDataUrl}
+                  hasAsset={!!(assets[0]?.dataUrl)}
+                  testimonialCount={testimonials.filter(t => t.text.trim().length > 5).length}
+                />
                 <div className="relative flex flex-col gap-14">
                   <div className="absolute top-8 bottom-8 left-[48px] w-px bg-gradient-to-b from-transparent via-[var(--accent)]/30 to-transparent z-0 hidden sm:block" />
                   <div className="absolute top-8 bottom-8 left-[36px] w-px bg-gradient-to-b from-transparent via-[var(--accent)]/30 to-transparent z-0 sm:hidden" />
@@ -363,7 +514,6 @@ export default function App() {
                       placeholder={lang === 'es' ? 'O escribe tu estilo: ej. vibrante, cálido, tecnológico y neón...' : 'Or type your style: e.g. vibrant, warm, tech, neon...'}
                       className="input-glow mb-2"
                     />
-                    <AIFieldAssistant fieldType="brandVoice" contextData={{ description: desc, niche: effectiveNiche }} onSelect={(v) => { setCustomVibe(v); setVibe(null) }} language={lang} />
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       {vibes.map((v, i) => (
@@ -373,6 +523,10 @@ export default function App() {
                           </VibeCard>
                         </motion.div>
                       ))}
+                    </div>
+
+                    <div className="mt-6 flex justify-start">
+                      <AIFieldAssistant fieldType="brandVoice" contextData={{ description: desc, niche: effectiveNiche }} onSelect={(v) => { setCustomVibe(v); setVibe(null) }} language={lang} />
                     </div>
                   </motion.section>
 
@@ -578,144 +732,218 @@ export default function App() {
                     <div className="flex flex-col gap-5">
 
                       {/* Logo */}
-                      <div>
-                        <p className="text-xs text-[var(--text-muted)] mb-2 font-medium">{lang === 'es' ? '🎨 Logo' : '🎨 Logo'}</p>
-                        <label className="flex items-center gap-3 cursor-pointer mb-2">
-                          <span className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-medium transition-all duration-200 ${logoAnnotation && logoAnnotation.startsWith('data:') ? 'border-green-500/40 bg-green-500/10 text-green-400' : 'border-[var(--border)] bg-[var(--surface-raised)] text-[var(--text-muted)] hover:text-white hover:border-[var(--border-hover)]'
-                            }`}>
-                            📤 {logoAnnotation && logoAnnotation.startsWith('data:') ? (lang === 'es' ? 'Logo cargado ✓' : 'Logo loaded ✓') : (lang === 'es' ? 'Subir logo' : 'Upload logo')}
+                      <div className="flex flex-col gap-3">
+                        <label className="text-sm font-semibold text-white flex items-center gap-2">
+                          {lang === 'es' ? '🎨 Logo' : '🎨 Logo'}
+                          <span className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-medium transition-all duration-200 ${logoDataUrl ? 'border-green-500/40 bg-green-500/10 text-green-400' : 'border-[var(--border)] bg-[var(--surface-raised)] text-[var(--text-muted)] hover:text-white hover:border-[var(--border-hover)]'}`}>
+                            <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                              const file = e.target.files?.[0]
+                              if (file) {
+                                const reader = new FileReader()
+                                reader.onload = (ev) => {
+                                  const dataUrl = ev.target?.result as string
+                                  setLogoDataUrl(dataUrl)
+                                }
+                                reader.readAsDataURL(file)
+                              }
+                            }} />
+                            📤 {logoDataUrl ? (lang === 'es' ? 'Logo cargado ✓' : 'Logo loaded ✓') : (lang === 'es' ? 'Subir foto del logo' : 'Upload logo image')}
                           </span>
-                          <input type="file" accept="image/*" className="hidden" onChange={(e) => {
-                            const file = e.target.files?.[0]
-                            if (!file) return
-                            const reader = new FileReader()
-                            reader.onload = (ev) => {
-                              const dataUrl = ev.target?.result as string
-                              setLogoAnnotation(dataUrl)
-                            }
-                            reader.readAsDataURL(file)
-                          }} />
                         </label>
-                        {logoAnnotation && logoAnnotation.startsWith('data:') && (
-                          <div className="relative mb-2 inline-block">
-                            <img src={logoAnnotation} alt="Logo" className="h-16 w-auto rounded-lg border border-[var(--border)] object-contain bg-white/5 p-1" />
-                            <button onClick={() => setLogoAnnotation('')} className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center cursor-pointer border-none">×</button>
+                        {logoDataUrl && (
+                          <div className="relative inline-block w-fit mb-2">
+                            <img src={logoDataUrl} alt="Logo" className="h-16 w-auto rounded-lg border border-[var(--border)] object-contain bg-white/5 p-1" />
+                            <button onClick={() => setLogoDataUrl('')} className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center cursor-pointer border-none shadow-md hover:bg-red-600 transition-colors">×</button>
                           </div>
                         )}
                         <textarea
-                          onPaste={handlePasteImage((dataUrl) => setLogoAnnotation(dataUrl))}
-                          value={logoAnnotation && logoAnnotation.startsWith('data:') ? '' : logoAnnotation}
+                          rows={2}
+                          onPaste={handlePasteImage((dataUrl) => setLogoDataUrl(dataUrl))}
+                          value={logoAnnotation}
                           onChange={(e) => setLogoAnnotation(e.target.value)}
-                          placeholder={lang === 'es' ? '✏️ O descríbelo o usa Ctrl+V para pegar imagen aquí...' : '✏️ Or describe / press Ctrl+V to paste image...'}
-                          rows={2} className="input-glow text-sm" />
+                          placeholder={lang === 'es' ? '✏️ Describe tu logo en breve (ej: Logo blanco, minimalista) o usa Ctrl+V para pegar imagen aquí...' : '✏️ Describe your logo briefly (e.g. White minimalist) or press Ctrl+V to paste image...'}
+                          className="w-full bg-[var(--surface)] text-white border border-[var(--border)] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[var(--accent)] transition-colors resize-none placeholder:text-[var(--text-dim)]"
+                        />
                       </div>
 
-                      {/* Client Logos / Testimonials */}
-                      <div>
-                        <p className="text-xs text-[var(--text-muted)] mb-2 font-medium">
-                          {lang === 'es' ? '🤝 Logos de Clientes (Testimonios)' : '🤝 Client Logos (Social Proof)'}
-                        </p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                          {[0, 1, 2, 3].map((i) => (
-                            <div key={`client-${i}`} className="bg-white/5 border border-white/10 rounded-xl p-3 flex flex-col gap-2">
-                              <label className="flex items-center justify-center cursor-pointer">
-                                <span className={`w-full text-center py-2 rounded-lg border text-xs font-medium transition-all duration-200 ${clientLogos[i]?.dataUrl ? 'border-green-500/40 bg-green-500/10 text-green-400' : 'border-[var(--border)] text-[var(--text-muted)] hover:text-white hover:border-[var(--border-hover)]'
-                                  }`}>
-                                  {clientLogos[i]?.dataUrl ? (lang === 'es' ? '✓ Cargado' : '✓ Loaded') : (lang === 'es' ? '📤 Subir' : '📤 Upload')}
-                                </span>
-                                <input type="file" accept="image/*" className="hidden" onChange={(e) => {
-                                  const file = e.target.files?.[0]
-                                  if (!file) return
-                                  const reader = new FileReader()
-                                  reader.onload = (ev) => {
-                                    const dataUrl = ev.target?.result as string
-                                    const updated = [...clientLogos]
-                                    if (!updated[i]) updated[i] = { dataUrl: '', annotation: '' }
-                                    updated[i].dataUrl = dataUrl
-                                    setClientLogos(updated)
-                                  }
-                                  reader.readAsDataURL(file)
-                                }} />
-                              </label>
 
-                              {clientLogos[i]?.dataUrl && (
-                                <div className="relative">
-                                  <img src={clientLogos[i].dataUrl} alt={`Client ${i + 1}`} className="h-12 w-full object-contain rounded-lg border border-[var(--border)] bg-white/10 p-1" />
-                                  <button onClick={() => { const u = [...clientLogos]; u[i] = { dataUrl: '', annotation: '' }; setClientLogos(u) }} className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center cursor-pointer border-none shadow-md">×</button>
-                                </div>
+
+                      {/* Images & Videos — dynamic */}
+                      {assets.map((_, i) => {
+                        const isVid = assets[i]?.dataUrl?.startsWith('data:video');
+                        return (
+                          <div key={i} className="relative">
+                            <div className="flex items-center justify-between mb-2">
+                              <p className="text-xs text-[var(--text-muted)] font-medium">
+                                {lang === 'es' ? `📸 Recurso (Imagen/Video) ${i + 1}` : `📸 Asset (Image/Video) ${i + 1}`}
+                              </p>
+                              {assets.length > 1 && (
+                                <button
+                                  onClick={() => setAssets(assets.filter((_, idx) => idx !== i))}
+                                  className="text-[10px] text-red-400/70 hover:text-red-400 transition-colors cursor-pointer bg-transparent border-none"
+                                >
+                                  {lang === 'es' ? '✕ Eliminar' : '✕ Remove'}
+                                </button>
                               )}
+                            </div>
+                            <label className="flex items-center gap-3 cursor-pointer mb-2">
+                              <span className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-medium transition-all duration-200 ${assets[i]?.dataUrl ? 'border-green-500/40 bg-green-500/10 text-green-400' : 'border-[var(--border)] bg-[var(--surface-raised)] text-[var(--text-muted)] hover:text-white hover:border-[var(--border-hover)]'
+                                }`}>
+                                📤 {assets[i]?.dataUrl ? (lang === 'es' ? 'Recurso cargado ✓' : 'Asset loaded ✓') : (lang === 'es' ? 'Subir Imagen/Video' : 'Upload Image/Video')}
+                              </span>
+                              <input type="file" accept="image/*,video/mp4,video/webm" className="hidden" onChange={(e) => {
+                                const file = e.target.files?.[0]
+                                if (!file) return
 
+                                if (file.size > 15 * 1024 * 1024) {
+                                  alert(lang === 'es' ? 'El archivo es demasiado grande. Selecciona algo menor a 15MB.' : 'File too large. Choose under 15MB.');
+                                  return;
+                                }
+
+                                const reader = new FileReader()
+                                reader.onload = (ev) => {
+                                  const dataUrl = ev.target?.result as string
+                                  const updated = [...assets]
+                                  updated[i] = { ...updated[i], dataUrl, isVideo: file.type.startsWith('video/') }
+                                  setAssets(updated)
+                                }
+                                reader.readAsDataURL(file)
+                              }} />
+                            </label>
+                            {assets[i]?.dataUrl && (
+                              <div className="relative mb-2 inline-block">
+                                {isVid ? (
+                                  <video src={assets[i].dataUrl} controls className="h-20 w-auto rounded-lg border border-[var(--border)] object-cover bg-black" />
+                                ) : (
+                                  <img src={assets[i].dataUrl} alt={`Asset ${i + 1}`} className="h-20 w-auto rounded-lg border border-[var(--border)] object-cover bg-white/5" />
+                                )}
+                                <button onClick={() => { const u = [...assets]; u[i] = { ...u[i], dataUrl: '', isVideo: false }; setAssets(u) }} className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center cursor-pointer border-none shadow-[0_0_10px_rgba(0,0,0,0.5)] z-10">×</button>
+                              </div>
+                            )}
+                            <textarea
+                              onPaste={handlePasteImage((dataUrl) => {
+                                const updated = [...assets]
+                                updated[i] = { ...updated[i], dataUrl }
+                                setAssets(updated)
+                              })}
+                              value={assets[i]?.annotation || ''}
+                              onChange={(e) => {
+                                const updated = [...assets]
+                                updated[i] = { ...updated[i], annotation: e.target.value }
+                                setAssets(updated)
+                              }}
+                              placeholder={lang === 'es'
+                                ? `¿Qué es? (o usa Ctrl+V para pegar foto aquí)`
+                                : `What is this? (or press Ctrl+V to paste)`}
+                              rows={2} className="input-glow text-sm" />
+                          </div>
+                        );
+                      })}
+                      {/* Add media button */}
+                      <motion.button
+                        whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                        onClick={() => setAssets([...assets, { dataUrl: '', annotation: '', isVideo: false }])}
+                        className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-dashed border-[var(--border)] text-[var(--text-muted)] hover:text-white hover:border-[var(--border-hover)] text-xs font-medium transition-all duration-200 cursor-pointer bg-transparent"
+                      >
+                        <span className="text-base leading-none">＋</span>
+                        {lang === 'es' ? 'Agregar Imagen / Video' : 'Add Image / Video'}
+                      </motion.button>
+
+                      {/* Testimonials — dynamic */}
+                      <div className="pt-2">
+                        <p className="text-xs text-[var(--text-muted)] mb-3 font-medium">
+                          {lang === 'es' ? '💬 Testimonios de Clientes' : '💬 Customer Testimonials'}
+                        </p>
+                        <div className="flex flex-col gap-4">
+                          {testimonials.map((t_item, i) => (
+                            <div key={i} className="bg-white/3 border border-white/8 rounded-xl p-3.5 flex flex-col gap-2.5">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--accent)]/70">
+                                  {lang === 'es' ? `Testimonio ${i + 1}` : `Testimonial ${i + 1}`}
+                                </span>
+                                {testimonials.length > 1 && (
+                                  <button
+                                    onClick={() => setTestimonials(testimonials.filter((_, idx) => idx !== i))}
+                                    className="text-[10px] text-red-400/70 hover:text-red-400 transition-colors cursor-pointer bg-transparent border-none"
+                                  >
+                                    {lang === 'es' ? '✕ Eliminar' : '✕ Remove'}
+                                  </button>
+                                )}
+                              </div>
+
+                              {/* Photo row */}
+                              <div className="flex items-center gap-3">
+                                {/* Avatar preview or placeholder */}
+                                <div className="relative shrink-0">
+                                  {t_item.photo ? (
+                                    <div className="relative">
+                                      <img src={t_item.photo} alt="foto" className="w-14 h-14 rounded-full object-cover border-2 border-[var(--accent)]/40 bg-white/5" />
+                                      <button
+                                        onClick={() => { const u = [...testimonials]; u[i] = { ...u[i], photo: '' }; setTestimonials(u) }}
+                                        className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] flex items-center justify-center cursor-pointer border-none"
+                                      >×</button>
+                                    </div>
+                                  ) : (
+                                    <div className="w-14 h-14 rounded-full border border-dashed border-[var(--border)] bg-white/3 flex items-center justify-center text-[var(--text-dim)] text-xl">
+                                      👤
+                                    </div>
+                                  )}
+                                </div>
+                                {/* Upload / paste button */}
+                                <label
+                                  onPaste={handlePasteImage((dataUrl) => { const u = [...testimonials]; u[i] = { ...u[i], photo: dataUrl }; setTestimonials(u) })}
+                                  className="flex-1 cursor-pointer"
+                                >
+                                  <span className={`flex items-center justify-center gap-1.5 w-full py-1.5 rounded-lg border text-xs font-medium transition-all duration-200 ${t_item.photo ? 'border-green-500/40 bg-green-500/10 text-green-400' : 'border-[var(--border)] bg-[var(--surface-raised)] text-[var(--text-muted)] hover:text-white hover:border-[var(--border-hover)]'
+                                    }`}>
+                                    📸 {t_item.photo ? (lang === 'es' ? 'Foto cargada ✓' : 'Photo loaded ✓') : (lang === 'es' ? 'Subir foto (o Ctrl+V)' : 'Upload photo (or Ctrl+V)')}
+                                  </span>
+                                  <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                                    const file = e.target.files?.[0]
+                                    if (!file) return
+                                    const reader = new FileReader()
+                                    reader.onload = (ev) => { const u = [...testimonials]; u[i] = { ...u[i], photo: ev.target?.result as string }; setTestimonials(u) }
+                                    reader.readAsDataURL(file)
+                                  }} />
+                                </label>
+                              </div>
+
+                              {/* Name + Role */}
+                              <div className="grid grid-cols-2 gap-2">
+                                <input
+                                  type="text"
+                                  value={t_item.name}
+                                  onChange={(e) => { const u = [...testimonials]; u[i] = { ...u[i], name: e.target.value }; setTestimonials(u) }}
+                                  placeholder={lang === 'es' ? '👤 Nombre completo' : '👤 Full name'}
+                                  className="input-glow text-sm py-2 px-3"
+                                />
+                                <input
+                                  type="text"
+                                  value={t_item.role}
+                                  onChange={(e) => { const u = [...testimonials]; u[i] = { ...u[i], role: e.target.value }; setTestimonials(u) }}
+                                  placeholder={lang === 'es' ? '💼 Cargo / Empresa' : '💼 Role / Company'}
+                                  className="input-glow text-sm py-2 px-3"
+                                />
+                              </div>
                               <textarea
-                                onPaste={handlePasteImage((dataUrl) => {
-                                  const updated = [...clientLogos]
-                                  if (!updated[i]) updated[i] = { dataUrl: '', annotation: '' }
-                                  updated[i].dataUrl = dataUrl
-                                  setClientLogos(updated)
-                                })}
-                                value={clientLogos[i]?.annotation || ''}
-                                onChange={(e) => {
-                                  const updated = [...clientLogos]
-                                  if (!updated[i]) updated[i] = { dataUrl: '', annotation: '' }
-                                  updated[i].annotation = e.target.value
-                                }}
-                                placeholder={lang === 'es' ? 'Nombre o Ctrl+V' : 'Name or Ctrl+V'}
-                                rows={1} className="input-glow text-[11px] px-2 py-1.5 min-h-[30px]" />
+                                value={t_item.text}
+                                onChange={(e) => { const u = [...testimonials]; u[i] = { ...u[i], text: e.target.value }; setTestimonials(u) }}
+                                placeholder={lang === 'es' ? '✍️ Escribe el testimonio aquí…' : '✍️ Write the testimonial here…'}
+                                rows={2}
+                                className="input-glow text-sm"
+                              />
                             </div>
                           ))}
                         </div>
+                        <motion.button
+                          whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                          onClick={() => setTestimonials([...testimonials, { name: '', role: '', text: '', photo: '' }])}
+                          className="flex items-center justify-center gap-2 w-full mt-3 py-2.5 rounded-xl border border-dashed border-[var(--border)] text-[var(--text-muted)] hover:text-white hover:border-[var(--border-hover)] text-xs font-medium transition-all duration-200 cursor-pointer bg-transparent"
+                        >
+                          <span className="text-base leading-none">＋</span>
+                          {lang === 'es' ? 'Agregar testimonio' : 'Add testimonial'}
+                        </motion.button>
                       </div>
-
-                      {/* Images */}
-                      {[0, 1, 2].map((i) => (
-                        <div key={i}>
-                          <p className="text-xs text-[var(--text-muted)] mb-2 font-medium">
-                            {lang === 'es' ? `🖼️ Imagen ${i + 1}` : `🖼️ Image ${i + 1}`}
-                          </p>
-                          <label className="flex items-center gap-3 cursor-pointer mb-2">
-                            <span className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-medium transition-all duration-200 ${assets[i]?.dataUrl ? 'border-green-500/40 bg-green-500/10 text-green-400' : 'border-[var(--border)] bg-[var(--surface-raised)] text-[var(--text-muted)] hover:text-white hover:border-[var(--border-hover)]'
-                              }`}>
-                              📤 {assets[i]?.dataUrl ? (lang === 'es' ? 'Imagen cargada ✓' : 'Image loaded ✓') : (lang === 'es' ? 'Subir imagen' : 'Upload image')}
-                            </span>
-                            <input type="file" accept="image/*" className="hidden" onChange={(e) => {
-                              const file = e.target.files?.[0]
-                              if (!file) return
-                              const reader = new FileReader()
-                              reader.onload = (ev) => {
-                                const dataUrl = ev.target?.result as string
-                                const updated = [...assets]
-                                if (!updated[i]) updated[i] = { dataUrl: '', annotation: '' }
-                                updated[i].dataUrl = dataUrl
-                                setAssets(updated)
-                              }
-                              reader.readAsDataURL(file)
-                            }} />
-                          </label>
-                          {assets[i]?.dataUrl && (
-                            <div className="relative mb-2 inline-block">
-                              <img src={assets[i].dataUrl} alt={`Asset ${i + 1}`} className="h-20 w-auto rounded-lg border border-[var(--border)] object-cover bg-white/5" />
-                              <button onClick={() => { const u = [...assets]; u[i] = { ...u[i], dataUrl: '' }; setAssets(u) }} className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center cursor-pointer border-none">×</button>
-                            </div>
-                          )}
-                          <textarea
-                            onPaste={handlePasteImage((dataUrl) => {
-                              const updated = [...assets]
-                              if (!updated[i]) updated[i] = { dataUrl: '', annotation: '' }
-                              updated[i].dataUrl = dataUrl
-                              setAssets(updated)
-                            })}
-                            value={assets[i]?.annotation || ''}
-                            onChange={(e) => {
-                              const updated = [...assets]
-                              if (!updated[i]) updated[i] = { dataUrl: '', annotation: '' }
-                              updated[i].annotation = e.target.value
-                              setAssets(updated)
-                            }}
-                            placeholder={lang === 'es'
-                              ? `¿Qué es? (o usa Ctrl+V para pegar foto aquí)`
-                              : `What is this? (or press Ctrl+V to paste)`}
-                            rows={2} className="input-glow text-sm" />
-                        </div>
-                      ))}
                     </div>
                   </motion.section>
 
@@ -723,12 +951,25 @@ export default function App() {
                   <motion.section variants={sectionVariants} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-40px' }} transition={{ duration: 0.55 }} className="glass-panel">
                     <Step n={9} title={lang === 'es' ? 'Referencias de Inspiración' : 'Inspiration References'} sub={lang === 'es' ? 'Sube capturas de sitios web que te gusten. Bolt/v0 analizarán su estilo visual y diseño.' : 'Upload screenshots of websites you love. Bolt/v0 will analyze their visual style and layout.'} />
                     <div className="flex flex-col gap-3">
-                      {[0, 1, 2].map((i) => (
-                        <div key={`insp-${i}`}>
+                      {inspirations.map((insp, i) => (
+                        <div key={`insp-${i}`} className="relative border-b border-white/5 pb-4 mb-1 last:border-0">
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-xs text-[var(--text-muted)] font-medium">
+                              {lang === 'es' ? `📸 Referencia ${i + 1}` : `📸 Reference ${i + 1}`}
+                            </p>
+                            {inspirations.length > 1 && (
+                              <button
+                                onClick={() => setInspirations(inspirations.filter((_, idx) => idx !== i))}
+                                className="text-[10px] text-red-400/70 hover:text-red-400 transition-colors cursor-pointer bg-transparent border-none"
+                              >
+                                {lang === 'es' ? '✕ Eliminar' : '✕ Remove'}
+                              </button>
+                            )}
+                          </div>
                           <label className="flex items-center gap-3 cursor-pointer mb-2">
-                            <span className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-medium transition-all duration-200 ${inspirations[i]?.dataUrl ? 'border-green-500/40 bg-green-500/10 text-green-400' : 'border-[var(--border)] bg-[var(--surface-raised)] text-[var(--text-muted)] hover:text-white hover:border-[var(--border-hover)]'
+                            <span className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-medium transition-all duration-200 ${insp.dataUrl ? 'border-green-500/40 bg-green-500/10 text-green-400' : 'border-[var(--border)] bg-[var(--surface-raised)] text-[var(--text-muted)] hover:text-white hover:border-[var(--border-hover)]'
                               }`}>
-                              {inspirations[i]?.dataUrl ? (lang === 'es' ? 'Ref cargada ✓' : 'Ref loaded ✓') : (lang === 'es' ? 'Subir Captura' : 'Upload Screenshot')}
+                              {insp.dataUrl ? (lang === 'es' ? 'Ref cargada ✓' : 'Ref loaded ✓') : (lang === 'es' ? 'Subir Captura' : 'Upload Screenshot')}
                             </span>
                             <input type="file" accept="image/*" className="hidden" onChange={(e) => {
                               const file = e.target.files?.[0]
@@ -737,30 +978,27 @@ export default function App() {
                               reader.onload = (ev) => {
                                 const dataUrl = ev.target?.result as string
                                 const updated = [...inspirations]
-                                if (!updated[i]) updated[i] = { dataUrl: '', annotation: '' }
                                 updated[i].dataUrl = dataUrl
                                 setInspirations(updated)
                               }
                               reader.readAsDataURL(file)
                             }} />
                           </label>
-                          {inspirations[i]?.dataUrl && (
+                          {insp.dataUrl && (
                             <div className="relative mb-2 inline-block">
-                              <img src={inspirations[i].dataUrl} alt={`Inspiration ${i + 1}`} className="h-20 w-auto rounded-lg border border-[var(--border)] object-cover bg-white/5" />
-                              <button onClick={() => { const u = [...inspirations]; u[i] = { ...u[i], dataUrl: '' }; setInspirations(u) }} className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center cursor-pointer border-none">×</button>
+                              <img src={insp.dataUrl} alt={`Inspiration ${i + 1}`} className="h-20 w-auto rounded-lg border border-[var(--border)] object-cover bg-white/5" />
+                              <button onClick={() => { const u = [...inspirations]; u[i].dataUrl = ''; setInspirations(u) }} className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center cursor-pointer border-none shadow-md">×</button>
                             </div>
                           )}
                           <textarea
                             onPaste={handlePasteImage((dataUrl) => {
                               const updated = [...inspirations]
-                              if (!updated[i]) updated[i] = { dataUrl: '', annotation: '' }
                               updated[i].dataUrl = dataUrl
                               setInspirations(updated)
                             })}
-                            value={inspirations[i]?.annotation || ''}
+                            value={insp.annotation || ''}
                             onChange={(e) => {
                               const updated = [...inspirations]
-                              if (!updated[i]) updated[i] = { dataUrl: '', annotation: '' }
                               updated[i].annotation = e.target.value
                               setInspirations(updated)
                             }}
@@ -770,6 +1008,18 @@ export default function App() {
                             rows={1} className="input-glow text-sm" />
                         </div>
                       ))}
+
+                      {/* Botón para agregar más inspiraciones */}
+                      <motion.button
+                        whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                        onClick={() => setInspirations([...inspirations, { dataUrl: '', annotation: '' }])}
+                        className="flex items-center justify-center gap-2 w-full mt-1 py-4 hover:border-blue-500/40 hover:bg-blue-500/10 rounded-xl border border-dashed border-[var(--border)] text-[var(--scrollbar-thumb)] hover:text-white hover:border-[var(--border-hover)] text-xs font-medium transition-all duration-200 cursor-pointer bg-transparent"
+                      >
+                        <span className="text-base leading-none text-blue-400">＋</span>
+                        <span className="text-blue-300">
+                          {lang === 'es' ? 'Agregar más fotos de referencia' : 'Add another reference photo'}
+                        </span>
+                      </motion.button>
                     </div>
                   </motion.section>
 
@@ -872,9 +1122,15 @@ export default function App() {
           >
             <CodeRain />
             <div className="relative z-10">
+              {/* ── Navbar ── */}
+              <Navbar
+                onCTAClick={handleCTAClick}
+                onLoginClick={() => setShowAuth(true)}
+                isLoggedIn={!!user}
+              />
 
               {/* ── HERO with 3D Robot ── */}
-              <section className="relative overflow-hidden min-h-screen">
+              <section id="caracteristicas" className="relative overflow-hidden min-h-screen">
                 {/* Background effects */}
                 <motion.div className="absolute inset-0 z-0"
                   animate={{ opacity: [0.6, 0.8, 0.6] }}
@@ -986,12 +1242,18 @@ export default function App() {
                 </motion.div>
               </section>
 
+              {/* ── Social Proof Counter ── */}
+              <SocialProofCounter />
+
               {/* ── Persuasive Sections ── */}
               <ProblemSection />
-              <HowItWorks />
-              <BenefitsSection />
+              <div id="como-funciona"><HowItWorks /></div>
+              <TestimonialsCarousel />
+              <div id="caracteristicas-detalle"><BenefitsSection /></div>
               <WhyVibepick />
-              <FAQ />
+              <PricingSection onCTAClick={handleCTAClick} />
+              <AffiliatesSection onCTAClick={handleCTAClick} />
+              <div id="faq"><FAQ /></div>
 
               <motion.section
                 initial={{ opacity: 0, y: 20 }}

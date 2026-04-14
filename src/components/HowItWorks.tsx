@@ -72,17 +72,38 @@ export default function HowItWorks() {
                             initial="hidden"
                             whileInView="visible"
                             viewport={{ once: true }}
-                            className="relative z-10 flex flex-col items-center text-center group"
+                            className="relative z-10 flex flex-col items-center text-center group cursor-default"
                         >
-                            <div className="w-24 h-24 rounded-3xl bg-[var(--surface-raised)] border border-[var(--border)] flex items-center justify-center mb-6 shadow-xl group-hover:border-[var(--accent)]/50 group-hover:shadow-[0_0_30px_rgba(0,119,255,0.2)] transition-all duration-300 relative overflow-hidden">
-                                <div className="absolute inset-0 bg-gradient-to-br from-[var(--accent)]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                                <span className="text-4xl relative z-10 group-hover:scale-110 transition-transform duration-300">{step.icon}</span>
-                                <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full border border-white/10 bg-black flex items-center justify-center text-[10px] font-bold text-[var(--accent)] z-20">
+                            <motion.div
+                                className="w-24 h-24 rounded-3xl bg-gradient-to-b from-white/10 to-transparent border border-white/10 backdrop-blur-md flex items-center justify-center mb-8 shadow-xl relative"
+                                animate={{
+                                    y: [0, -8, 0],
+                                    boxShadow: [
+                                        '0 15px 35px rgba(0,0,0,0.5)',
+                                        '0 25px 50px rgba(0,102,255,0.25)',
+                                        '0 15px 35px rgba(0,0,0,0.5)'
+                                    ]
+                                }}
+                                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: i * 0.4 }}
+                            >
+                                <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-[var(--accent)]/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                                <span className="text-4xl relative z-10 group-hover:scale-125 transition-transform duration-500 drop-shadow-2xl">
+                                    {step.icon}
+                                </span>
+
+                                <motion.div
+                                    className="absolute -top-3 -right-3 w-10 h-10 rounded-full bg-[var(--accent)] border-2 border-[#0B0F19] flex items-center justify-center text-sm font-black text-white shadow-[0_0_20px_rgba(0,102,255,0.8)] z-20"
+                                    whileHover={{ scale: 1.2, rotate: 10 }}
+                                >
                                     {step.num}
-                                </div>
-                            </div>
-                            <h3 className="text-xl font-bold text-white mb-3">{step.title}</h3>
-                            <p className="text-sm text-[var(--text-muted)] leading-relaxed max-w-sm">
+                                </motion.div>
+                            </motion.div>
+
+                            <h3 className="text-xl font-extrabold text-white mb-3 group-hover:text-[var(--accent)] transition-colors duration-300">
+                                {step.title}
+                            </h3>
+                            <p className="text-sm text-white/60 leading-relaxed max-w-sm group-hover:text-white/90 transition-colors duration-300">
                                 {step.desc}
                             </p>
                         </motion.div>

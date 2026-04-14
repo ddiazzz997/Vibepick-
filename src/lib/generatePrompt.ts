@@ -13,9 +13,11 @@ export interface PromptInputs {
   linkedin?: string          // LinkedIn URL
   customLink?: string        // Custom Website / Link URL
   logoAnnotation?: string    // Text annotation for logo image
+  logoDataUrl?: string       // Base64 image data for the logo
   clientLogos?: Array<{ dataUrl: string; annotation: string }> // Client logos / Testimonials
   assets?: Array<{ dataUrl: string; annotation: string }> // Images with annotations
   inspirations?: Array<{ dataUrl: string; annotation: string }> // Inspiration screenshot dataUrls
+  testimonials?: Array<{ name: string; role: string; text: string; photo?: string }> // Real customer testimonials
 }
 
 /*
@@ -623,7 +625,12 @@ export function generatePrompt(inputs: PromptInputs): string {
   const {
     description, niche, vibe, sections, cta, lang = 'en',
     siteLang, whatsapp, instagram, facebook, tiktok, linkedin, customLink,
-    logoAnnotation, clientLogos = [], assets = [], inspirations = [],
+    logoDataUrl,
+    logoAnnotation,
+    clientLogos = [],
+    assets = [],
+    inspirations = [],
+    testimonials = []
   } = inputs
 
   // Resolve industry profile from niche BEFORE building the prompt
@@ -870,48 +877,87 @@ export function generatePrompt(inputs: PromptInputs): string {
   }
 
   // ── Image Assets & Logo ───────────────────────────────────────────────────
-  // When logo/images are data URLs, we reference them by annotation only
-  // (base64 strings are too large for LLM prompt context, and are uploaded separately)
-  const logoDesc = logoAnnotation?.startsWith('data:')
-    ? (lang === 'es' ? '[Imagen de logo adjunta — ver sección de assets]' : '[Logo image attached — see assets section]')
-    : logoAnnotation
-  const validAssets = assets.filter(a => a.annotation)
-  const validClientLogos = clientLogos.filter(a => a.annotation || a.dataUrl)
-  const hasAssets = validAssets.length > 0 || logoAnnotation || validClientLogos.length > 0
+  // We explicitly link the provided dataUrls (now in the exported public/ directory)
+  // to their filenames and annotations to completely replace placeholders.
+  const validAssets = assets.filter(a => a.dataUrl || a.annotation)
+  const validClientLogos = clientLogos.filter(a => a.dataUrl || a.annotation)
+  const hasAssets = validAssets.length > 0 || logoDataUrl || validClientLogos.length > 0
+
   if (hasAssets) {
     lines.push(``)
     if (lang === 'es') {
-      lines.push(`**Recursos visuales proporcionados por el cliente:**`)
-      lines.push(`- El cliente ha proporcionado sus propias imágenes. Para los elementos donde se especifican activos propios, NO uses fotos de stock de Unsplash — usa estas descripciones para referenciarlos.`)
-      if (logoAnnotation) {
-        lines.push(`- LOGO: ${logoDesc}. Úsalo en la navbar (altura: 32-40px) y en el footer. NO generes texto como sustituto del logo.`)
+      lines.push(`**RECURSOS VISUALES LOCALES (USO OBLIGATORIO):**`)
+      lines.push(`- Te he proporcionado los activos fotográficos y logos reales del cliente dentro de la carpeta \`public/\`. NO uses imágenes de stock de Unsplash ni placeholders genéricos para estos elementos. Debes referenciarlos exactamente con estas rutas en tu código:`)
+
+      if (logoDataUrl) {
+        lines.push(`- **LOGO PRINCIPAL**: Archivo \`./public/logo.png\`. ${logoAnnotation ? `(Descripción provista por el cliente: "${logoAnnotation}")` : ''} Úsalo en la navbar (altura: 32-40px) y en el footer.`)
       }
+
       if (validClientLogos.length > 0) {
-        lines.push(`- LOGOS DE CLIENTES / Partners: Hay ${validClientLogos.length} imagen(es) adjunta(s) que corresponden a marcas que confían en el cliente. Úsalas EXCLUSIVAMENTE en la sección de 'Social Proof' o Testimonios.`)
+        lines.push(`- **LOGOS DE CLIENTES / TESTIMONIOS**: Hay ${validClientLogos.length} imagen(es) de marcas que confían en nosotros.`)
+        validClientLogos.forEach((c, i) => {
+          lines.push(`  * Archivo \`./public/client_logo_${i + 1}.png\`. ${c.annotation ? `(Descripción: "${c.annotation}")` : ''}`)
+        })
+        lines.push(`  Úsalos EXCLUSIVAMENTE en la sección de 'Social Proof' o Testimonios.`)
       }
-      validAssets.forEach((asset, i) => {
-        const desc = asset.dataUrl
-          ? `[Imagen ${i + 1} adjunta] — ${asset.annotation}`
-          : asset.annotation
-        lines.push(`- IMAGEN ${i + 1}: ${desc}. Posiciónala donde tenga más impacto visual según el contenido de esa sección.`)
-      })
-      lines.push(`- IMPORTANTE: El cliente cargará estas imágenes manualmente en el proyecto. Usa <img src="./logo.png" /> o nombres descriptivos como placeholders — el cliente los reemplazará.`)
+
+      if (validAssets.length > 0) {
+        lines.push(`- **IMÁGENES DE APOYO**:`)
+        validAssets.forEach((asset, i) => {
+          lines.push(`  * Archivo \`./public/asset_${i + 1}.png\`. ${asset.annotation ? `(Descripción: "${asset.annotation}")` : ''}`)
+        })
+        lines.push(`  Distribuye estas imágenes donde tengan más impacto visual (ej. Hero, Nosotros, Producto). Tienen un papel fundamental para subir la conversión.`)
+      }
     } else {
-      lines.push(`**Client-provided visual assets:**`)
-      lines.push(`- The client has provided their own images. For elements where real assets are specified, do NOT use Unsplash stock photos — use these descriptions to reference them.`)
-      if (logoAnnotation) {
-        lines.push(`- LOGO: ${logoDesc}. Use it in the navbar (height: 32-40px) and in the footer. Do NOT generate text as a logo substitute.`)
+      lines.push(`**LOCAL VISUAL ASSETS (MANDATORY USE):**`)
+      lines.push(`- I have provided the real client photographic assets and logos inside the \`public/\` folder. DO NOT use Unsplash stock images or generic placeholders for these elements. You must reference them exactly with these paths in your code:`)
+
+      if (logoDataUrl) {
+        lines.push(`- **MAIN LOGO**: File \`./public/logo.png\`. ${logoAnnotation ? `(Client description: "${logoAnnotation}")` : ''} Use it in the navbar (height: 32-40px) and footer.`)
       }
+
       if (validClientLogos.length > 0) {
-        lines.push(`- CLIENT / PARTNER LOGOS: There are ${validClientLogos.length} attached images representing brands that trust the client. Use them EXCLUSIVELY in the 'Social Proof' or Testimonials section.`)
+        lines.push(`- **CLIENT / PARTNER LOGOS**: There are ${validClientLogos.length} image(s) representing trusting brands.`)
+        validClientLogos.forEach((c, i) => {
+          lines.push(`  * File \`./public/client_logo_${i + 1}.png\`. ${c.annotation ? `(Description: "${c.annotation}")` : ''}`)
+        })
+        lines.push(`  Use them EXCLUSIVELY in the 'Social Proof' or Testimonials section.`)
       }
-      validAssets.forEach((asset, i) => {
-        const desc = asset.dataUrl
-          ? `[Image ${i + 1} attached] — ${asset.annotation}`
-          : asset.annotation
-        lines.push(`- IMAGE ${i + 1}: ${desc}. Position it where it will have the most visual impact in the relevant section.`)
+
+      if (validAssets.length > 0) {
+        lines.push(`- **SUPPORTING IMAGES**:`)
+        validAssets.forEach((asset, i) => {
+          lines.push(`  * File \`./public/asset_${i + 1}.png\`. ${asset.annotation ? `(Description: "${asset.annotation}")` : ''}`)
+        })
+        lines.push(`  Position these images where they will have the most visual impact (e.g. Hero, About, Product). They play a vital role in increasing conversions.`)
+      }
+    }
+  }
+
+  // ── Real Testimonials ─────────────────────────────────────────────────────
+  const validTestimonials = testimonials.filter(t => t.name || t.text)
+  if (validTestimonials.length > 0) {
+    lines.push(``)
+    if (lang === 'es') {
+      lines.push(`**TESTIMONIOS REALES DEL CLIENTE (USA ESTOS EXACTAMENTE):**`)
+      lines.push(`- El cliente ha proporcionado los siguientes testimonios reales. Úsalos TAL CUAL en la sección de Testimonios. NO inventes ni alteres los nombres, cargos ni el texto. Preséntelos con el estilo visual que corresponda:`)
+      validTestimonials.forEach((t, i) => {
+        const name = t.name || `Cliente ${i + 1}`
+        const role = t.role ? ` — ${t.role}` : ''
+        const text = t.text || ''
+        const photo = t.photo ? ` (Foto real del cliente: \`./public/testimonial_${i + 1}.jpg\` — úsala como avatar del testimonio)` : ''
+        lines.push(`  ${i + 1}. **${name}${role}**${photo}: "${text}"`)
       })
-      lines.push(`- IMPORTANT: The client will upload these images manually to the project. Use <img src="./hero.jpg" /> or descriptive names as placeholders — the client will replace them.`)
+    } else {
+      lines.push(`**REAL CUSTOMER TESTIMONIALS (USE THESE EXACTLY):**`)
+      lines.push(`- The client has provided the following real testimonials. Use them EXACTLY AS GIVEN in the Testimonials section. Do NOT invent or alter names, roles, or text. Present them with the appropriate visual style:`)
+      validTestimonials.forEach((t, i) => {
+        const name = t.name || `Customer ${i + 1}`
+        const role = t.role ? ` — ${t.role}` : ''
+        const text = t.text || ''
+        const photo = t.photo ? ` (Real client photo: \`./public/testimonial_${i + 1}.jpg\` — use it as the testimonial avatar)` : ''
+        lines.push(`  ${i + 1}. **${name}${role}**${photo}: "${text}"`)
+      })
     }
   }
 
@@ -920,19 +966,19 @@ export function generatePrompt(inputs: PromptInputs): string {
   if (validInspirations.length > 0) {
     lines.push(``)
     if (lang === 'es') {
-      lines.push(`**Referencias de inspiración visual adjuntas (analiza quirúrgicamente):**`)
-      lines.push(`- El cliente ha adjuntado en el archivo ZIP ${validInspirations.length} captura(s) de pantalla (referenciadas como '5_inspiration_1', etc.). Analiza el diseño de los archivos adjuntos.`)
+      lines.push(`**REFERENCIAS DE DISEÑO (Analiza e imita el estilo):**`)
+      lines.push(`- Te he proporcionado una carpeta \`design_references/\` con capturas de pantalla de sitios web que el cliente quiere tomar como base visual.`)
       validInspirations.forEach((insp, i) => {
-        lines.push(`  * ${i + 1}. Archivo visual '5_inspiration_${i + 1}': ${insp.annotation || 'Referencia de estilo visual general.'}`)
+        lines.push(`  * Revisa el archivo \`design_references/inspiration_${i + 1}.png\`. ${insp.annotation ? `Contexto del archivo: ${insp.annotation}` : ''}`)
       })
-      lines.push(`- ADAPTA (no copies) estos patrones a la identidad y contenido de ESTA marca. El objetivo es capturar la misma SENSACIÓN y nivel de calidad, con identidad única.`)
+      lines.push(`- ADAPTA meticulosamente estos patrones visuales (colores, espaciado, sombras, tipografía) a ESTA nueva web. Extrae la esencia premium y modernidad de las referencias.`)
     } else {
-      lines.push(`**Attached visual inspirations (analyze surgically):**`)
-      lines.push(`- The client has provided ${validInspirations.length} screenshot(s) in the ZIP file (referenced as '5_inspiration_1', etc.). Analyze these attached files.`)
+      lines.push(`**DESIGN REFERENCES (Analyze and mimic the style):**`)
+      lines.push(`- I have provided a \`design_references/\` folder containing screenshots of websites the client wishes to emulate visually.`)
       validInspirations.forEach((insp, i) => {
-        lines.push(`  * ${i + 1}. Visual file '5_inspiration_${i + 1}': ${insp.annotation || 'General visual style reference.'}`)
+        lines.push(`  * Review the file \`design_references/inspiration_${i + 1}.png\`. ${insp.annotation ? `Context: ${insp.annotation}` : ''}`)
       })
-      lines.push(`- ADAPT (do not copy) these patterns to THIS brand's identity. Capture the same FEEL and quality level, with a unique presentation.`)
+      lines.push(`- Meticulously ADAPT these visual patterns (colors, spacing, shadows, typography) to THIS new site. Extract the premium essence and modern layout of the references.`)
     }
   }
 

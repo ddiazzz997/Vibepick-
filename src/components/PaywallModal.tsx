@@ -66,47 +66,21 @@ export default function PaywallModal({ show }: PaywallModalProps) {
                         </motion.h2>
 
                         {/* Price */}
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: 0.5, type: 'spring', stiffness: 200 }}
-                            className="mb-4"
-                        >
-                            <span className="text-lg text-[var(--text-dim)] line-through mr-2">$49/mes</span>
-                            <span className="text-4xl font-black text-white">$7</span>
-                            <span className="text-base text-[var(--text-muted)]">/mes</span>
+                        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: 0.5, type: 'spring', stiffness: 200 }} className="mb-5">
+                            <span className="text-5xl font-black text-white">$9</span>
+                            <span className="text-base text-[var(--text-muted)]"> /mes</span>
+                            <p className="text-xs text-white/30 mt-1">Prompts ilimitados · Cancela cuando quieras</p>
                         </motion.div>
 
-                        {/* Description */}
-                        <motion.p
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.6 }}
-                            className="text-sm text-[var(--text-muted)] leading-relaxed mb-3"
-                        >
-                            {t.paywallDesc}
-                        </motion.p>
+                        {/* Value items */}
+                        <motion.ul initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.65 }}
+                            className="text-left space-y-1.5 mb-6 text-xs text-white/60">
+                            {['✅ Prompts ilimitados', '✅ Todas las secciones desbloqueadas', '✅ Exportación de proyecto completa', '✅ Soporte directo por WhatsApp'].map(item => (<li key={item}>{item}</li>
+                            ))}
+                        </motion.ul>
 
-                        {/* Bonus */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.7 }}
-                            className="rounded-xl p-3 mb-6"
-                            style={{
-                                background: 'rgba(0, 102, 255, 0.08)',
-                                border: '1px solid rgba(0, 102, 255, 0.15)',
-                            }}
-                        >
-                            <p className="text-xs font-semibold text-[var(--accent)]">
-                                🎁 BONUS
-                            </p>
-                            <p className="text-xs text-[var(--text-muted)] mt-1">
-                                {t.paywallBonus}
-                            </p>
-                        </motion.div>
-
-                        {/* CTA button with pulsing glow */}
+                        {/* CTA button */}
                         <motion.a
                             href="https://api.whatsapp.com/send?phone=573233194440&text=Hola%20Daniel%2C%20quiero%20suscribirme%20a%20Vibepick%20Pro%20por%20%247%2Fmes.%20%C2%BFC%C3%B3mo%20procedo%3F"
                             target="_blank"
