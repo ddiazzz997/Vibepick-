@@ -4,19 +4,22 @@
 
 :root {
   --bg: #000000;
-  --surface: #060a12;
-  --surface-raised: #0b1120;
-  --surface-hover: #1e293b;
-  --border: #1e293b;
-  --border-hover: #3b82f6;
-  --border-focus: #0088ff;
-  --accent: #0077ff;
-  --accent-soft: rgba(0, 119, 255, 0.15);
+  --surface: #02020f;
+  --surface-raised: #050518;
+  --surface-hover: #0a0a28;
+  --border: #1a1f35;
+  --border-hover: #0066ff;
+  --border-focus: #0ea5e9;
+  --accent: #0066ff;
+  --accent-2: #0ea5e9;
+  --accent-soft: rgba(0, 102, 255, 0.15);
+  --accent-soft-2: rgba(14, 165, 233, 0.12);
   --accent-glow: rgba(0, 102, 255, 0.4);
+  --accent-glow-2: rgba(14, 165, 233, 0.35);
   --text: #f8fafc;
   --text-muted: #94a3b8;
   --text-dim: #475569;
-  --input-bg: #0b1120;
+  --input-bg: #050518;
 }
 
 * {
@@ -30,7 +33,7 @@ body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
-  cursor: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQwIDQwIj4KICA8ZGVmcz4KICAgIDxmaWx0ZXIgaWQ9Imdsb3ciIHg9Ii01MCUiIHk9Ii01MCUiIHdpZHRoPSIyMDAlIiBoZWlnaHQ9IjIwMCUiPgogICAgICA8ZmVHYXVzc2lhbkJsdXIgc3RkRGV2aWF0aW9uPSIzIiByZXN1bHQ9ImNvbG9yZWRCbHVyIi8+CiAgICAgIDxmZU1lcmdlPgogICAgICAgIDxmZU1lcmdlTm9kZSBpbj0iY29sb3JlZEJsdXIiLz4KICAgICAgICA8ZmVNZXJnZU5vZGUgaW49IlNvdXJjZUdyYXBoaWMiLz4KICAgICAgPC9mZU1lcmdlPgogICAgPC9maWx0ZXI+CiAgPC9kZWZzPgogIDxwb2x5Z29uIHBvaW50cz0iMTAsMTAgMTAsMzAgMTYsMjUgMjAsMzMgMjMsMzEgMTksMjQgMjcsMjQiIGZpbGw9ImJsYWNrIiBzdHJva2U9IiMwMDc3ZmYiIHN0cm9rZS13aWR0aD0iMS41IiBmaWx0ZXI9InVybCgjZ2xvdykiLz4KPC9zdmc+") 10 10, auto;
+  cursor: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQwIDQwIj4KICA8ZGVmcz4KICAgIDxmaWx0ZXIgaWQ9Imdsb3ciIHg9Ii01MCUiIHk9Ii01MCUiIHdpZHRoPSIyMDAlIiBoZWlnaHQ9IjIwMCUiPgogICAgICA8ZmVHYXVzc2lhbkJsdXIgc3RkRGV2aWF0aW9uPSIzIiByZXN1bHQ9ImNvbG9yZWRCbHVyIi8+CiAgICAgIDxmZU1lcmdlPgogICAgICAgIDxmZU1lcmdlTm9kZSBpbj0iY29sb3JlZEJsdXIiLz4KICAgICAgICA8ZmVNZXJnZU5vZGUgaW49IlNvdXJjZUdyYXBoaWMiLz4KICAgICAgPC9mZU1lcmdlPgogICAgPC9maWx0ZXI+CiAgPC9kZWZzPgogIDxwb2x5Z29uIHBvaW50cz0iMTAsMTAgMTAsMzAgMTYsMjUgMjAsMzMgMjMsMzEgMTksMjQgMjcsMjQiIGZpbGw9ImJsYWNrIiBzdHJva2U9IiMwMDY2ZmYiIHN0cm9rZS13aWR0aD0iMS41IiBmaWx0ZXI9InVybCgjZ2xvdykiLz4KPC9zdmc+") 10 10, auto;
 }
 
 a,
@@ -40,7 +43,7 @@ input[type="submit"],
 input[type="button"],
 select,
 .cursor-pointer {
-  cursor: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQwIDQwIj4KICA8ZGVmcz4KICAgIDxmaWx0ZXIgaWQ9Imdsb3ciIHg9Ii01MCUiIHk9Ii01MCUiIHdpZHRoPSIyMDAlIiBoZWlnaHQ9IjIwMCUiPgogICAgICA8ZmVHYXVzc2lhbkJsdXIgc3RkRGV2aWF0aW9uPSIzIiByZXN1bHQ9ImNvbG9yZWRCbHVyIi8+CiAgICAgIDxmZU1lcmdlPgogICAgICAgIDxmZU1lcmdlTm9kZSBpbj0iY29sb3JlZEJsdXIiLz4KICAgICAgICA8ZmVNZXJnZU5vZGUgaW49IlNvdXJjZUdyYXBoaWMiLz4KICAgICAgPC9mZU1lcmdlPgogICAgPC9maWx0ZXI+CiAgPC9kZWZzPgogIDwhLS0gSGFuZCB2ZWN0b3IgKHNpbXBsaWZpZWQpIC0tPgogIDxwYXRoIGQ9Ik0xNi41LDIwLjUgdi04LjUgYTIsMiAwIDAsMSA0LDAgdjQgTTIwLjUsMTQgYTIsMiAwIDAsMSA0LDAgdjIuNSBNMjQuNSwxNSBhMiwyIDAgMCwxIDQsMCB2NC41IE0yOC41LDE5IGEyLDIgMCAwLDEgNCwwIHY1IGMwLDUuNSAtNC41LDEwIC0xMCwxMCBjLTQuNSwwIC03LC0yLjUgLTksLTYgbC0yLjUsLTQuNSBhMi41LDIuNSAwIDAsMSA0LC0zIGwzLDUgTTEyLjUsMjAuNSBhMiwyIDAgMCwxIDQsMCIgZmlsbD0iYmxhY2siIHN0cm9rZT0iIzAwNzdmZiIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGZpbHRlcj0idXJsKCNnbG93KSIvPgo8L3N2Zz4=") 16 11, pointer !important;
+  cursor: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQwIDQwIj4KICA8ZGVmcz4KICAgIDxmaWx0ZXIgaWQ9Imdsb3ciIHg9Ii01MCUiIHk9Ii01MCUiIHdpZHRoPSIyMDAlIiBoZWlnaHQ9IjIwMCUiPgogICAgICA8ZmVHYXVzc2lhbkJsdXIgc3RkRGV2aWF0aW9uPSIzIiByZXN1bHQ9ImNvbG9yZWRCbHVyIi8+CiAgICAgIDxmZU1lcmdlPgogICAgICAgIDxmZU1lcmdlTm9kZSBpbj0iY29sb3JlZEJsdXIiLz4KICAgICAgICA8ZmVNZXJnZU5vZGUgaW49IlNvdXJjZUdyYXBoaWMiLz4KICAgICAgPC9mZU1lcmdlPgogICAgPC9maWx0ZXI+CiAgPC9kZWZzPgogIDxwYXRoIGQ9Ik0xNi41LDIwLjUgdi04LjUgYTIsMiAwIDAsMSA0LDAgdjQgTTIwLjUsMTQgYTIsMiAwIDAsMSA0LDAgdjIuNSBNMjQuNSwxNSBhMiwyIDAgMCwxIDQsMCB2NC41IE0yOC41LDE5IGEyLDIgMCAwLDEgNCwwIHY1IGMwLDUuNSAtNC41LDEwIC0xMCwxMCBjLTQuNSwwIC03LC0yLjUgLTksLTYgbC0yLjUsLTQuNSBhMi41LDIuNSAwIDAsMSA0LC0zIGwzLDUgTTEyLjUsMjAuNSBhMiwyIDAgMCwxIDQsMCIgZmlsbD0iYmxhY2siIHN0cm9rZT0iIzAwNjZmZiIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGZpbHRlcj0idXJsKCNnbG93KSIvPgo8L3N2Zz4=") 16 11, pointer !important;
 }
 
 input[type="text"],
@@ -66,19 +69,23 @@ textarea,
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #4a4a5a;
+  background: #0a1f4d;
   border-radius: 3px;
 }
 
+::-webkit-scrollbar-thumb:hover {
+  background: #0066ff60;
+}
+
 ::selection {
-  background: rgba(0, 102, 255, 0.35);
+  background: rgba(0, 102, 255, 0.3);
   color: #ffffff;
 }
 
 /* ── Inputs — Premium glow ── */
 .input-glow {
-  background: rgba(11, 17, 32, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(5, 5, 24, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 12px;
   padding: 16px 20px;
   font-size: 15px;
@@ -88,7 +95,7 @@ textarea,
   transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
   outline: none;
   font-family: 'JetBrains Mono', monospace;
-  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.2);
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.25);
 }
 
 .input-glow::placeholder {
@@ -97,15 +104,17 @@ textarea,
 }
 
 .input-glow:hover {
-  border-color: rgba(255, 255, 255, 0.2);
-  background: rgba(11, 17, 32, 0.6);
-  box-shadow: 0 4px 20px rgba(0, 119, 255, 0.08), inset 0 2px 10px rgba(0, 0, 0, 0.2);
+  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(5, 5, 24, 0.7);
+  box-shadow: 0 4px 20px rgba(0, 102, 255, 0.06), inset 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
 .input-glow:focus {
-  border-color: rgba(0, 119, 255, 0.4);
-  background: rgba(0, 0, 0, 0.6);
-  box-shadow: 0 0 0 1px rgba(0, 119, 255, 0.4), 0 8px 30px rgba(0, 119, 255, 0.15), inset 0 2px 10px rgba(0, 0, 0, 0.4);
+  border-color: rgba(0, 102, 255, 0.45);
+  background: rgba(0, 0, 15, 0.7);
+  box-shadow: 0 0 0 1px rgba(0, 102, 255, 0.35),
+              0 8px 30px rgba(0, 102, 255, 0.12),
+              inset 0 2px 10px rgba(0, 0, 0, 0.4);
 }
 
 textarea.input-glow {
@@ -114,20 +123,30 @@ textarea.input-glow {
 
 /* ── Glass Panels ── */
 .glass-panel {
-  background: rgba(10, 15, 26, 0.4);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(2, 2, 20, 0.45);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid rgba(255, 255, 255, 0.055);
   border-radius: 20px;
   padding: 36px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45),
+              inset 0 1px 0 rgba(255, 255, 255, 0.04);
   position: relative;
   z-index: 10;
   transition: transform 0.4s ease, box-shadow 0.4s ease;
 }
 
 .glass-panel:hover {
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5), 0 0 40px rgba(0, 119, 255, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55),
+              0 0 40px rgba(0, 102, 255, 0.06),
+              inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+/* ── Glass Panel Sky variant ── */
+.glass-panel-teal:hover {
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55),
+              0 0 40px rgba(14, 165, 233, 0.06),
+              inset 0 1px 0 rgba(255, 255, 255, 0.07);
 }
 
 /* ── Prompt scroll ── */
@@ -140,19 +159,16 @@ textarea.input-glow {
 }
 
 .prompt-scroll::-webkit-scrollbar-thumb {
-  background: #4a4a5a;
+  background: #0a1f4d;
   border-radius: 2px;
 }
 
 /* ── Pulse ── */
 @keyframes pulse {
-
-  0%,
-  100% {
+  0%, 100% {
     opacity: 1;
     transform: scale(1);
   }
-
   50% {
     opacity: 0.3;
     transform: scale(0.85);
@@ -168,7 +184,6 @@ textarea.input-glow {
   0% {
     background-position: -200% center;
   }
-
   100% {
     background-position: 200% center;
   }
@@ -179,30 +194,40 @@ textarea.input-glow {
   animation: shimmer 4s linear infinite;
 }
 
+/* ── Shimmer text Blue variant ── */
+.shimmer-text-pt {
+  background: linear-gradient(
+    90deg,
+    #0066ff 0%,
+    #60a5fa 25%,
+    #0ea5e9 50%,
+    #60a5fa 75%,
+    #0066ff 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 5s linear infinite;
+}
+
 /* ── Hero orb float ── */
 @keyframes float-slow {
-
-  0%,
-  100% {
+  0%, 100% {
     transform: translate(0, 0) scale(1);
   }
-
   33% {
     transform: translate(15px, -25px) scale(1.05);
   }
-
   66% {
     transform: translate(-10px, 10px) scale(0.97);
   }
 }
 
 @keyframes float-slower {
-
-  0%,
-  100% {
+  0%, 100% {
     transform: translate(0, 0) scale(1);
   }
-
   50% {
     transform: translate(-20px, -15px) scale(1.03);
   }
@@ -217,7 +242,7 @@ textarea.input-glow {
   content: '';
   position: absolute;
   inset: -8px 15% -8px 15%;
-  background: radial-gradient(ellipse, rgba(0, 102, 255, 0.15) 0%, transparent 70%);
+  background: radial-gradient(ellipse, rgba(0, 102, 255, 0.12) 0%, transparent 70%);
   opacity: 0;
   transition: opacity 0.6s ease;
   pointer-events: none;
@@ -227,12 +252,11 @@ textarea.input-glow {
   opacity: 1;
 }
 
-/* ── Rainbow border shimmer ── */
+/* ── Rainbow border shimmer — Blue/Sky ── */
 @keyframes border-rotate {
   0% {
     --angle: 0deg;
   }
-
   100% {
     --angle: 360deg;
   }
@@ -256,11 +280,11 @@ textarea.input-glow {
   border-radius: inherit;
   padding: 1.5px;
   background: conic-gradient(from var(--angle),
-      rgba(0, 102, 255, 0.4),
-      rgba(255, 255, 255, 0.1),
-      rgba(0, 102, 255, 0.1),
-      rgba(255, 255, 255, 0.4),
-      rgba(0, 102, 255, 0.4));
+      rgba(0, 102, 255, 0.5),
+      rgba(14, 165, 233, 0.2),
+      rgba(0, 102, 255, 0.15),
+      rgba(14, 165, 233, 0.5),
+      rgba(0, 102, 255, 0.5));
   animation: border-rotate 6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
@@ -273,19 +297,18 @@ textarea.input-glow {
 .rainbow-border:hover::before {
   opacity: 1;
   background: conic-gradient(from var(--angle),
-      rgba(0, 102, 255, 0.8),
-      rgba(255, 255, 255, 0.2),
-      rgba(0, 102, 255, 0.2),
-      rgba(255, 255, 255, 0.8),
-      rgba(0, 102, 255, 0.8));
+      rgba(0, 102, 255, 0.9),
+      rgba(14, 165, 233, 0.4),
+      rgba(0, 102, 255, 0.3),
+      rgba(14, 165, 233, 0.9),
+      rgba(0, 102, 255, 0.9));
 }
 
-/* ── Rainbow glow strip ── */
+/* ── Rainbow glow strip — Blue/Sky ── */
 @keyframes rainbow-slide {
   0% {
     background-position: 0% center;
   }
-
   100% {
     background-position: 200% center;
   }
@@ -296,8 +319,8 @@ textarea.input-glow {
   height: 2px;
   border-radius: 2px;
   background: linear-gradient(90deg,
-      #0066ff, #0ea5e9, #3b82f6, #06b6d4, #0ea5e9, #3b82f6, #0066ff,
-      #0ea5e9, #3b82f6, #06b6d4, #0ea5e9, #3b82f6, #0066ff);
+      #0066ff, #60a5fa, #0ea5e9, #38bdf8, #0066ff,
+      #60a5fa, #0ea5e9, #38bdf8, #0066ff);
   background-size: 200% auto;
   animation: rainbow-slide 4s linear infinite;
 }
@@ -309,14 +332,62 @@ textarea.input-glow {
   border-radius: 50%;
   background: linear-gradient(90deg,
       rgba(0, 102, 255, 0.3),
-      rgba(14, 165, 233, 0.3),
-      rgba(59, 130, 246, 0.2),
-      rgba(6, 182, 212, 0.2),
-      rgba(14, 165, 233, 0.3),
-      rgba(59, 130, 246, 0.2),
+      rgba(96, 165, 250, 0.25),
+      rgba(14, 165, 233, 0.2),
+      rgba(56, 189, 248, 0.2),
+      rgba(96, 165, 250, 0.25),
+      rgba(14, 165, 233, 0.2),
       rgba(0, 102, 255, 0.3));
   background-size: 200% auto;
   animation: rainbow-slide 4s linear infinite;
   filter: blur(16px);
   pointer-events: none;
+}
+
+/* ── Trust banner marquee ── */
+@keyframes marquee-left {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes marquee-right {
+  0% { transform: translateX(-50%); }
+  100% { transform: translateX(0); }
+}
+
+.marquee-left {
+  animation: marquee-left 28s linear infinite;
+  display: flex;
+  width: max-content;
+}
+
+.marquee-right {
+  animation: marquee-right 32s linear infinite;
+  display: flex;
+  width: max-content;
+}
+
+.marquee-left:hover,
+.marquee-right:hover {
+  animation-play-state: paused;
+}
+
+/* ── CTA gradient button ── */
+.btn-gradient {
+  background: linear-gradient(135deg, #0066ff 0%, #0ea5e9 100%);
+  box-shadow: 0 4px 24px rgba(0, 102, 255, 0.35);
+  transition: box-shadow 0.3s ease, transform 0.2s ease;
+}
+
+.btn-gradient:hover {
+  box-shadow: 0 6px 36px rgba(0, 102, 255, 0.5), 0 0 20px rgba(14, 165, 233, 0.2);
+}
+
+/* ── Accent glow utilities ── */
+.glow-pink {
+  box-shadow: 0 0 20px rgba(0, 102, 255, 0.25);
+}
+
+.glow-teal {
+  box-shadow: 0 0 20px rgba(14, 165, 233, 0.25);
 }

@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { chatWithAssistant } from '../lib/gemini';
+import { chatWithAssistant } from '../lib/claude';
 import { Loader2, Paperclip, Send, Check, X, User } from 'lucide-react';
 
 interface AIFieldAssistantProps {
     fieldType: string;
     contextData: Record<string, string>;
     onSelect: (text: string) => void;
+    onSelectField?: (field: string, text: string) => void;
     language?: string;
 }
 
@@ -16,12 +17,13 @@ type ChatMessage = {
     content: string;
     imageBase64?: string;
     finalText?: string;
+    finalField?: string | null;
 };
 
 /* ─── Avatar del asistente IA ─── */
 const AI_AVATAR_SRC = '/ai-avatar.jpeg';
 
-export function AIFieldAssistant({ fieldType, contextData, onSelect, language = 'es' }: AIFieldAssistantProps) {
+export function AIFieldAssistant({ fieldType, contextData, onSelect, onSelectField, language = 'es' }: AIFieldAssistantProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [userMessage, setUserMessage] = useState('');
     const [imageBase64, setImageBase64] = useState<string | null>(null);
@@ -48,52 +50,87 @@ export function AIFieldAssistant({ fieldType, contextData, onSelect, language = 
     }, []);
 
     const suggestions = (() => {
-        if (fieldType === 'sectionBuilder') {
-            return language === 'es' ? [
-                "Dime cuál es el nicho y te diré qué secciones necesitas primero.",
-                "¿Qué estructura convierte mejor para un sitio SaaS tecnológico?",
-                "Sugiere una estructura paso a paso para clínicas médicas.",
-                "Estructura óptima para un entrenador personal."
-            ] : [
-                "Tell me the niche and I'll tell you which sections you need first.",
-                "What structure converts best for a tech SaaS site?",
-                "Suggest a step-by-step structure for medical clinics.",
-                "Optimal structure for a personal trainer."
-            ];
-        }
-
-        return language === 'es' ? [
-            "Soy experto en Vibecoding y herramientas como Google Antigravity o Claude Code.",
-            "Ayúdame a mejorar este contexto de mi empresa.",
-            "Ayúdame a mejorar el prompt para mi página web.",
-            "Ayúdame a estructurar un PRD."
-        ] : [
-            "Expert in Vibecoding and tools like Google Antigravity or Claude Code.",
-            "Help me improve this business context.",
-            "Help me improve my website prompt.",
-            "Help me structure a PRD."
-        ];
+        const map: Record<string, { es: string[]; en: string[] }> = {
+            sectionBuilder: {
+                es: ["Dime cuál es el nicho y te diré qué secciones necesitas primero.", "¿Qué estructura convierte mejor para un sitio SaaS tecnológico?", "Sugiere una estructura paso a paso para clínicas médicas.", "Estructura óptima para un entrenador personal."],
+                en: ["Tell me the niche and I'll tell you which sections you need first.", "What structure converts best for a tech SaaS site?", "Suggest a step-by-step structure for medical clinics.", "Optimal structure for a personal trainer."]
+            },
+            description: {
+                es: ["Cuéntame sobre tu negocio y te ayudo a describirlo perfectamente.", "Ayúdame a mejorar este contexto de mi empresa.", "Ayúdame a estructurar un PRD.", "¿Cómo posiciono mi producto para máxima conversión?"],
+                en: ["Tell me about your business and I'll help describe it perfectly.", "Help me improve this business context.", "Help me structure a PRD.", "How do I position my product for max conversion?"]
+            },
+            niche: {
+                es: ["¿Qué sub-nicho es más rentable para mi negocio?", "Analiza mi nicho y dime si debo especializarme más.", "¿Qué nicho tiene menos competencia en mi sector?", "Sugiéreme nichos rentables dentro de mi industria."],
+                en: ["What sub-niche is most profitable for my business?", "Analyze my niche and tell me if I should specialize further.", "What niche has less competition in my sector?", "Suggest profitable niches within my industry."]
+            },
+            brandVoice: {
+                es: ["¿Qué paleta de colores convierten mejor para mi nicho?", "Sugiere un estilo visual premium para mi marca.", "¿Qué tipografía recomendarías para mi industria?", "Dame un moodboard visual para mi sitio web."],
+                en: ["What color palette converts best for my niche?", "Suggest a premium visual style for my brand.", "What typography would you recommend for my industry?", "Give me a visual moodboard for my website."]
+            },
+            offer: {
+                es: ["Ayúdame a crear una oferta irresistible estilo Hormozi.", "¿Cuál es el mejor CTA para mi tipo de negocio?", "Crea 3 variaciones de mi oferta principal.", "¿Cómo agrego urgencia sin parecer desesperado?"],
+                en: ["Help me create an irresistible Hormozi-style offer.", "What's the best CTA for my business type?", "Create 3 variations of my main offer.", "How do I add urgency without looking desperate?"]
+            },
+            contact: {
+                es: ["¿Cuáles redes sociales son clave para mi nicho?", "Ayúdame a crear el mensaje perfecto de WhatsApp.", "¿Necesito todas las redes o solo algunas?", "¿Qué red social me generará más clientes?"],
+                en: ["Which social networks are key for my niche?", "Help me craft the perfect WhatsApp message.", "Do I need all social networks or just some?", "Which social platform will generate the most clients?"]
+            },
+            siteLang: {
+                es: ["¿Mi sitio debería estar en varios idiomas?", "¿Español LATAM o Español España?", "¿Vale la pena tenerlo también en inglés?", "¿Qué idioma convierte mejor para mi mercado?"],
+                en: ["Should my site be in multiple languages?", "What language converts best for my market?", "Is it worth having an English version too?", "What are the SEO implications of my language choice?"]
+            },
+            assets: {
+                es: ["¿Qué tipo de imágenes convierten más en mi nicho?", "Ayúdame a escribir mejores testimonios.", "¿Cómo pido testimonios a mis clientes actuales?", "¿Cuántos testimonios necesita mi sitio web?"],
+                en: ["What type of images convert most in my niche?", "Help me write better testimonials.", "How do I ask my current clients for testimonials?", "How many testimonials does my website need?"]
+            },
+            inspiration: {
+                es: ["Busca sitios web de referencia para mi nicho.", "Muéstrame los mejores diseños web de mi industria.", "¿Qué páginas ganan premios de diseño en mi sector?", "Necesito inspiración visual — ¿qué sitios debo ver?"],
+                en: ["Find reference websites for my niche.", "Show me the best web designs in my industry.", "What pages win design awards in my sector?", "I need visual inspiration — what sites should I look at?"]
+            },
+        };
+        const found = map[fieldType];
+        return found ? (language === 'es' ? found.es : found.en) : (language === 'es'
+            ? ["Cuéntame en qué te puedo ayudar.", "Soy tu asistente especializado.", "Hazme cualquier pregunta sobre este paso."]
+            : ["Tell me how I can help.", "I'm your specialized assistant.", "Ask me anything about this step."]);
     })();
 
     const getInitialMessage = () => {
-        if (language === 'es') {
-            switch (fieldType) {
-                case 'description':
-                    return '¡Hola! Soy tu Ingeniero y Especialista en Marketing. Para construir la página web perfecta, empecemos por lo básico: ¿De qué trata tu negocio o qué es lo que vendes? (Puedes escribirlo o subir un documento/foto).';
-                case 'brandVoice':
-                    return '¡Hola! Soy tu Diseñador UI/UX. Para elegir la identidad visual correcta, dime: ¿qué estilo te imaginas o qué marcas te sirven de inspiración?';
-                case 'offer':
-                    return '¡Hola! Soy tu experto en Marketing (Hormozi). ¿Cuál es la oferta principal o la acción clave que quieres que tus clientes realicen aquí?';
-                default: return '¡Hola! ¿En qué te puedo ayudar hoy?';
-            }
-        } else {
-            switch (fieldType) {
-                case 'description': return 'Hi! I am your Product Manager. To build the perfect website, let\'s start with the basics: What exactly do you sell or do?';
-                case 'brandVoice': return 'Hi! I am your UI/UX Designer. What kind of visual style are you looking for?';
-                case 'offer': return 'Hi! I am your Direct Response Marketer. What is the main offer or action you want users to take?';
-                default: return 'Hello! How can I help you?';
-            }
-        }
+        const msgs: Record<string, { es: string; en: string }> = {
+            description: {
+                es: '¿Cuál es el nombre de tu empresa o negocio?',
+                en: 'What is the name of your business or brand?'
+            },
+            niche: {
+                es: '¡Hola! Soy tu Investigador de Mercado. Veo que estás eligiendo tu nicho. ¿Ya tienes uno en mente o necesitas ayuda para encontrar el más rentable para tu negocio?',
+                en: 'Hi! I am your Market Researcher. I see you\'re choosing your niche. Do you have one in mind or do you need help finding the most profitable one for your business?'
+            },
+            brandVoice: {
+                es: '¡Hola! Soy tu Diseñador UI/UX. Para elegir la identidad visual correcta, dime: ¿qué estilo te imaginas o qué marcas te sirven de inspiración?',
+                en: 'Hi! I am your UI/UX Designer. What kind of visual style are you looking for?'
+            },
+            offer: {
+                es: '¡Hola! Soy tu experto en Marketing (Hormozi). ¿Cuál es la oferta principal o la acción clave que quieres que tus clientes realicen aquí?',
+                en: 'Hi! I am your Direct Response Marketer. What is the main offer or action you want users to take?'
+            },
+            contact: {
+                es: '¡Hola! Soy tu Estratega de Comunicación y Redes. Basándome en tu negocio, te voy a decir exactamente qué redes sociales priorizas y cómo optimizar tu contacto. ¿Cuéntame, ya tienes redes sociales activas?',
+                en: 'Hi! I am your Communication Strategist. Based on your business, I\'ll tell you exactly which social networks to prioritize. Do you already have active social media?'
+            },
+            siteLang: {
+                es: '¡Hola! Soy tu Consultor de Internacionalización. ¿Tu mercado es local, regional o internacional? Eso me ayuda a recomendarte el idioma ideal para tu sitio.',
+                en: 'Hi! I am your Internationalization Consultant. Is your market local, regional, or international? That helps me recommend the ideal language for your site.'
+            },
+            assets: {
+                es: '¡Hola! Soy tu Director Creativo. Te voy a guiar para que subas los mejores recursos visuales y escribas testimonios que realmente conviertan. ¿Ya tienes fotos de tu negocio o producto?',
+                en: 'Hi! I am your Creative Director. I\'ll guide you to upload the best visual assets and write testimonials that truly convert. Do you already have photos of your business or product?'
+            },
+            inspiration: {
+                es: '¡Hola! Soy tu Curador de Tendencias Web. Dime de qué trata tu negocio y te voy a sugerir sitios web reales que puedes usar como inspiración visual. Te doy los enlaces directos para que los visites y tomes capturas de pantalla. 🔗',
+                en: 'Hi! I am your Web Trend Curator. Tell me what your business is about and I\'ll suggest real websites you can use as visual inspiration. I\'ll give you direct links to visit and take screenshots. 🔗'
+            },
+        };
+        const found = msgs[fieldType];
+        return found ? (language === 'es' ? found.es : found.en) : (language === 'es' ? '¡Hola! ¿En qué te puedo ayudar hoy?' : 'Hello! How can I help you?');
     };
 
     useEffect(() => {
@@ -123,12 +160,17 @@ export function AIFieldAssistant({ fieldType, contextData, onSelect, language = 
     };
 
     const parseFinalText = (text: string) => {
+        const fieldMatch = text.match(/<FINAL_TEXT field="([^"]+)">([\s\S]*?)<\/FINAL_TEXT>/);
+        if (fieldMatch) {
+            const beforeText = text.replace(/<FINAL_TEXT field="[^"]*">[\s\S]*?<\/FINAL_TEXT>/, '').trim();
+            return { conversational: beforeText, finalContent: fieldMatch[2].trim(), finalField: fieldMatch[1] };
+        }
         const match = text.match(/<FINAL_TEXT>([\s\S]*?)<\/FINAL_TEXT>/);
         if (match && match[1]) {
             const beforeText = text.replace(/<FINAL_TEXT>[\s\S]*?<\/FINAL_TEXT>/, '').trim();
-            return { conversational: beforeText, finalContent: match[1].trim() };
+            return { conversational: beforeText, finalContent: match[1].trim(), finalField: null };
         }
-        return { conversational: text, finalContent: null };
+        return { conversational: text, finalContent: null, finalField: null };
     };
 
     const handleSubmit = async () => {
@@ -169,14 +211,15 @@ export function AIFieldAssistant({ fieldType, contextData, onSelect, language = 
             });
 
             const result = await chatWithAssistant(fieldType, history as any, contextData, language);
-            const { conversational, finalContent } = parseFinalText(result);
+            const { conversational, finalContent, finalField } = parseFinalText(result);
 
             if (finalContent) {
                 setMessages(prev => [...prev, {
                     id: Date.now().toString(),
                     role: 'assistant',
                     content: conversational || '¡Todo listo!',
-                    finalText: finalContent
+                    finalText: finalContent,
+                    finalField: finalField
                 }]);
             } else {
                 setMessages(prev => [...prev, {
@@ -447,11 +490,24 @@ export function AIFieldAssistant({ fieldType, contextData, onSelect, language = 
                                                         {msg.finalText}
                                                     </div>
                                                     <button
-                                                        onClick={() => { onSelect(msg.finalText!); setIsOpen(false); }}
+                                                        onClick={() => {
+                                                            if (msg.finalField && onSelectField) {
+                                                                onSelectField(msg.finalField, msg.finalText!);
+                                                            } else {
+                                                                onSelect(msg.finalText!);
+                                                            }
+                                                            setIsOpen(false);
+                                                        }}
                                                         className="w-full flex justify-center items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-medium px-4 py-2 rounded-lg transition-colors text-[13px] shadow-lg shadow-blue-500/25"
                                                     >
                                                         <Check size={16} />
-                                                        {language === 'es' ? 'Aplicar al formulario' : 'Apply to form'}
+                                                        {msg.finalField === 'logo'
+                                                            ? (language === 'es' ? '↑ Aplicar al Logo' : '↑ Apply to Logo')
+                                                            : msg.finalField?.startsWith('asset_')
+                                                                ? (language === 'es' ? `↑ Aplicar al Recurso ${msg.finalField.split('_')[1]}` : `↑ Apply to Asset ${msg.finalField.split('_')[1]}`)
+                                                                : msg.finalField?.startsWith('testimonial_')
+                                                                    ? (language === 'es' ? `↑ Aplicar al Testimonio ${parseInt(msg.finalField.split('_')[1]) + 1}` : `↑ Apply to Testimonial ${parseInt(msg.finalField.split('_')[1]) + 1}`)
+                                                                    : (language === 'es' ? 'Aplicar al formulario' : 'Apply to form')}
                                                     </button>
                                                 </div>
                                             )}

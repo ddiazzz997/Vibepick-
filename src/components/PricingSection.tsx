@@ -21,13 +21,10 @@ const CrossIcon = () => (
 export default function PricingSection({ onCTAClick }: PricingSectionProps) {
     const { lang } = useLang()
     const isEs = lang === 'es'
-    const [annual, setAnnual] = useState(false)
+    const [annual, setAnnual] = useState(true)
 
     const discount = annual ? 0.7 : 1
-    const proPriceMonthly = 9
-    const agencyPriceMonthly = 29
-    const proPrice = Math.round(proPriceMonthly * discount)
-    const agencyPrice = Math.round(agencyPriceMonthly * discount)
+    const proPrice = Math.round(9 * discount)
 
     const plans = [
         {
@@ -92,35 +89,6 @@ export default function PricingSection({ onCTAClick }: PricingSectionProps) {
                 { text: 'Multi-client', ok: false },
             ],
         },
-        {
-            id: 'agency',
-            labelEs: 'Agencia',
-            labelEn: 'Agency',
-            price: agencyPrice,
-            perEs: '/mes',
-            perEn: '/mo',
-            featured: false,
-            borderColor: 'rgba(148,163,184,0.2)',
-            ctaStyleClass: 'bg-white/5 border border-white/20 text-white hover:bg-white/10',
-            ctaTextEs: 'Escalar mi agencia',
-            ctaTextEn: 'Scale my agency',
-            featuresEs: [
-                { text: 'Todo lo de Pro', ok: true },
-                { text: '20 clientes / proyectos', ok: true },
-                { text: 'White-label del prompt', ok: true },
-                { text: 'Soporte prioritario', ok: true },
-                { text: 'Comisión afiliado mejorada', ok: true },
-                { text: 'Dashboard multi-cliente', ok: true },
-            ],
-            featuresEn: [
-                { text: 'Everything in Pro', ok: true },
-                { text: '20 clients / projects', ok: true },
-                { text: 'Prompt white-label', ok: true },
-                { text: 'Priority support', ok: true },
-                { text: 'Enhanced affiliate commission', ok: true },
-                { text: 'Multi-client dashboard', ok: true },
-            ],
-        },
     ]
 
     return (
@@ -175,22 +143,20 @@ export default function PricingSection({ onCTAClick }: PricingSectionProps) {
                         />
                     </button>
                     <span className="flex items-center gap-2 text-sm">
-                        <span className="text-white/60">{isEs ? 'Anual' : 'Annual'}</span>
-                        {annual && (
-                            <motion.span
-                                initial={{ scale: 0 }}
-                                animate={{ scale: 1 }}
-                                className="px-2 py-0.5 rounded-full text-[11px] font-bold text-white"
-                                style={{ background: 'rgba(16,185,129,0.2)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)' }}
-                            >
-                                -30%
-                            </motion.span>
-                        )}
+                        <span className={annual ? 'text-white font-semibold' : 'text-white/60'}>{isEs ? 'Anual' : 'Annual'}</span>
+                        <motion.span
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="px-2 py-0.5 rounded-full text-[11px] font-bold"
+                            style={{ background: 'rgba(16,185,129,0.2)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)' }}
+                        >
+                            {isEs ? '¡Ahorra 30%!' : 'Save 30%!'}
+                        </motion.span>
                     </span>
                 </motion.div>
 
                 {/* Plans grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch max-w-3xl mx-auto">
                     {plans.map((plan, i) => (
                         <motion.div
                             key={plan.id}

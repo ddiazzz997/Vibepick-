@@ -75,14 +75,15 @@ export default function SectionBuilder({ selected, onChange }: Props) {
                   exit={{ opacity: 0, x: -20, scale: 0.95 }}
                   whileDrag={{
                     scale: 1.03,
-                    boxShadow: '0 8px 32px rgba(0,102,255,0.25)',
+                    boxShadow: '0 8px 32px rgba(0,102,255,0.2), 0 4px 16px rgba(14,165,233,0.15)',
                     zIndex: 50,
                   }}
                   transition={{ type: 'spring', stiffness: 450, damping: 30 }}
                   className="flex items-center gap-3 px-3.5 py-3 rounded-xl select-none
-                    cursor-grab active:cursor-grabbing transition-colors duration-150
+                    cursor-grab active:cursor-grabbing transition-all duration-200
                     bg-[var(--surface-raised)] border border-[var(--border)]
-                    hover:bg-[var(--surface-hover)] hover:border-[var(--border-hover)]"
+                    hover:bg-[var(--surface-hover)] hover:border-[var(--border-hover)]
+                    hover:shadow-[0_4px_20px_rgba(0,102,255,0.08)]"
                 >
                   <GripVertical size={14} className="text-[var(--text-dim)] shrink-0" />
                   <span className="text-[var(--accent)] shrink-0">{icon}</span>
@@ -155,7 +156,7 @@ export default function SectionBuilder({ selected, onChange }: Props) {
                       bg-[var(--surface-raised)] border border-[var(--border)]
                       text-[var(--text-muted)] text-[13px] font-medium
                       hover:border-[var(--accent)]/40 hover:text-white hover:bg-[var(--surface-hover)]
-                      hover:shadow-[0_4px_20px_rgba(0,102,255,0.12)]
+                      hover:shadow-[0_4px_20px_rgba(236,72,153,0.1),0_2px_12px_rgba(20,184,166,0.06)]
                       transition-all cursor-pointer"
                   >
                     <Plus size={13} className="text-[var(--accent)]" />

@@ -31,9 +31,11 @@ import SiteProgressBar from './components/SiteProgressBar'
 import CreditsModal from './components/CreditsModal'
 import AffiliatesSection from './components/AffiliatesSection'
 import { useCredits } from './hooks/useCredits'
+import { usePromptHistory } from './hooks/usePromptHistory'
+import PromptHistorySidebar from './components/PromptHistorySidebar'
+import UserProfileCard from './components/UserProfileCard'
 import TestimonialsCarousel from './components/TestimonialsCarousel'
 import BadgesDisplay from './components/BadgesDisplay'
-import CreditsBadge from './components/CreditsBadge'
 /* ── Animation variants ── */
 const sectionVariants = {
   hidden: { opacity: 0, y: 28, filter: 'blur(6px)' },
@@ -79,6 +81,7 @@ export default function App() {
 
   const [showPlatform, setShowPlatform] = useState(false)
   const [showPaywall, setShowPaywall] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   // ── Credits system ───────────────────────────────────
   const isPro = profile?.is_pro ?? false
@@ -88,6 +91,11 @@ export default function App() {
     setShowCreditModal,
     spendCredit,
   } = useCredits(!!user, isPro)
+
+  // ── Prompt history ───────────────────────────────────
+  const { savePrompt } = usePromptHistory()
+  const [selectedHistoryId, setSelectedHistoryId] = useState<string | undefined>()
+
   const [desc, setDesc] = useState('')
   const [niche, setNiche] = useState('')
   const [customNiche, setCustomNiche] = useState('')
@@ -103,7 +111,7 @@ export default function App() {
   const [facebook, setFacebook] = useState('')
   const [tiktok, setTiktok] = useState('')
   const [linkedin, setLinkedin] = useState('')
-  const [customLink, setCustomLink] = useState('')
+  const [customLinks, setCustomLinks] = useState<string[]>([''])
   // Step 7 — Site Language
   const [siteLang, setSiteLang] = useState('Español')
   // Step 8 — Asset Uploads
@@ -142,14 +150,14 @@ export default function App() {
         facebook: facebook || undefined,
         tiktok: tiktok || undefined,
         linkedin: linkedin || undefined,
-        customLink: customLink || undefined,
+        customLinks: customLinks.filter(l => l.trim() !== ''),
         logoDataUrl: logoDataUrl || undefined,
         logoAnnotation: logoAnnotation || undefined,
         assets,
         inspirations,
         testimonials,
       }),
-    [desc, effectiveNiche, effectiveVibe, sections, cta, lang, siteLang, whatsappCode, whatsappNumber, instagram, facebook, tiktok, linkedin, customLink, logoDataUrl, logoAnnotation, assets, inspirations, testimonials],
+    [desc, effectiveNiche, effectiveVibe, sections, cta, lang, siteLang, whatsappCode, whatsappNumber, instagram, facebook, tiktok, linkedin, customLinks, logoDataUrl, logoAnnotation, assets, inspirations, testimonials],
   )
 
   /* Handle image paste */
@@ -199,7 +207,15 @@ export default function App() {
       if (!allowed) return
       await incrementPromptCount()
     }
-  }, [user, isPro, spendCredit, incrementPromptCount])
+    if (desc.trim()) {
+      await savePrompt(user.id, {
+        description: desc,
+        vibe: effectiveVibe || undefined,
+        sections,
+        prompt_text: prompt,
+      })
+    }
+  }, [user, isPro, spendCredit, incrementPromptCount, desc, effectiveVibe, sections, prompt, savePrompt])
 
   const handleExportZip = useCallback(async () => {
     try {
@@ -313,6 +329,63 @@ export default function App() {
         />
       )}
       {showPlatform && <LangToggle />}
+
+      {/* ── Fixed UI: sidebar toggle + user profile (fuera del motion.div para que position:fixed funcione) ── */}
+      {showPlatform && (
+        <>
+          <button
+            onClick={() => setSidebarOpen(v => !v)}
+            style={{
+              position:     'fixed',
+              left:         sidebarOpen ? '244px' : '0px',
+              top:          '50%',
+              transform:    'translateY(-50%)',
+              background:   'rgba(0,102,255,0.15)',
+              border:       '1px solid rgba(0,102,255,0.3)',
+              borderRadius: sidebarOpen ? '8px 0 0 8px' : '0 8px 8px 0',
+              zIndex:       150,
+              width:        '28px',
+              height:       '52px',
+              cursor:       'pointer',
+              display:      'flex',
+              alignItems:   'center',
+              justifyContent: 'center',
+              color:        'rgba(96,165,250,0.9)',
+              transition:   'left 0.25s ease, border-radius 0.25s ease, background 0.15s',
+              padding:      0,
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(0,102,255,0.28)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(0,102,255,0.15)')}
+            aria-label={sidebarOpen ? 'Cerrar historial' : 'Abrir historial'}
+          >
+            {sidebarOpen ? (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            ) : (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+            )}
+          </button>
+
+          {user && profile && (
+            <UserProfileCard
+              firstName={profile.first_name}
+              lastName={profile.last_name}
+              email={user.email}
+              credits={credits}
+              isPro={isPro}
+              onSignOut={() => {
+                signOut()
+                setShowPlatform(false)
+              }}
+            />
+          )}
+        </>
+      )}
+
       <AuthModal onSuccess={handleAuthSuccess} />
       <PaywallModal show={showPaywall} />
       <CreditsModal
@@ -335,7 +408,22 @@ export default function App() {
             className="min-h-screen relative bg-black"
           >
             <CodeRain />
-            <div className="relative z-10">
+
+            <div className="relative z-10 flex">
+              {/* Sidebar */}
+              <PromptHistorySidebar
+                onSelect={(item) => {
+                  setDesc(item.description)
+                  setSelectedHistoryId(item.id)
+                }}
+                onNewSession={() => {
+                  setDesc('')
+                  setSelectedHistoryId(undefined)
+                }}
+                selectedId={selectedHistoryId}
+                isOpen={sidebarOpen}
+              />
+              <div className="flex-1 min-w-0">
               {/* Platform Header */}
               <header className="relative overflow-hidden">
                 <div className="absolute inset-0 overflow-hidden">
@@ -348,32 +436,6 @@ export default function App() {
 
                 <div className="relative z-10 pt-20 pb-6 px-5">
                   <div className="max-w-xl mx-auto text-center">
-                    {/* User header */}
-                    {user && profile && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="fixed top-4 left-4 z-[140] flex items-center gap-3"
-                      >
-                        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--surface-raised)] border border-[var(--border)]">
-                          <div className="w-7 h-7 rounded-full bg-[var(--accent)] flex items-center justify-center text-white text-xs font-bold">
-                            {profile.first_name[0]}
-                          </div>
-                          <span className="text-sm text-white font-medium">{t.authGreeting}, {profile.first_name}</span>
-                          <CreditsBadge credits={credits} isPro={isPro} />
-                          <button
-                            onClick={() => {
-                              signOut()
-                              setShowPlatform(false)
-                            }}
-                            className="text-xs text-[var(--text-dim)] hover:text-white ml-2 cursor-pointer bg-transparent border-none transition-colors"
-                          >
-                            {t.authLogout}
-                          </button>
-                        </div>
-                      </motion.div>
-                    )}
-
                     <motion.div
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
@@ -676,29 +738,74 @@ export default function App() {
                         </div>
                       </motion.div>
 
-                      {/* Enlace Personalizado */}
-                      <motion.div whileHover={{ scale: 1.01 }} className="flex items-center gap-0 rounded-xl border border-[var(--border)] overflow-hidden bg-white/5 hover:border-white/20 transition-colors duration-200" style={{ borderLeft: '3px solid #64748B' }}>
-                        <div className="flex items-center justify-center w-14 h-14 shrink-0" style={{ background: 'rgba(255,255,255,0.05)' }}>
-                          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                      {/* Custom Links — múltiples */}
+                      {customLinks.map((link, idx) => (
+                        <motion.div
+                          key={idx}
+                          whileHover={{ scale: 1.01 }}
+                          className="flex items-center gap-0 rounded-xl border border-[var(--border)] overflow-hidden bg-white/5 hover:border-white/20 transition-colors duration-200"
+                          style={{ borderLeft: '3px solid #64748B' }}
+                        >
+                          <div
+                            className="flex items-center justify-center w-14 h-14 shrink-0"
+                            style={{ background: 'rgba(255,255,255,0.05)' }}
+                          >
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                            </svg>
+                          </div>
+                          <div className="flex-1 pr-2">
+                            <p className="text-[10px] font-semibold uppercase tracking-widest mb-0.5" style={{ color: '#94A3B8' }}>
+                              {lang === 'es'
+                                ? idx === 0 ? 'Otro Enlace' : `Enlace ${idx + 1}`
+                                : idx === 0 ? 'Other Link' : `Link ${idx + 1}`}
+                            </p>
+                            <input
+                              type="url"
+                              value={link}
+                              onChange={(e) => {
+                                const updated = [...customLinks]
+                                updated[idx] = e.target.value
+                                setCustomLinks(updated)
+                              }}
+                              placeholder="https://tudominio.com"
+                              className="w-full bg-transparent text-sm text-white placeholder-[var(--text-dim)] outline-none border-none"
+                            />
+                          </div>
+                          {idx > 0 && (
+                            <button
+                              onClick={() => setCustomLinks(prev => prev.filter((_, i) => i !== idx))}
+                              className="mr-2 text-slate-600 hover:text-red-400 transition-colors p-1 rounded"
+                              title={lang === 'es' ? 'Eliminar enlace' : 'Remove link'}
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                                <line x1="18" y1="6" x2="6" y2="18" />
+                                <line x1="6" y1="6" x2="18" y2="18" />
+                              </svg>
+                            </button>
+                          )}
+                        </motion.div>
+                      ))}
+
+                      {/* Botón "+" para agregar nuevo enlace — máximo 5 */}
+                      {customLinks.length < 5 && (
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.97 }}
+                          onClick={() => setCustomLinks(prev => [...prev, ''])}
+                          className="flex items-center gap-2 px-4 py-2 rounded-xl border border-dashed border-slate-700 hover:border-slate-500 bg-transparent text-slate-500 hover:text-slate-300 text-xs font-medium transition-all duration-200 cursor-pointer w-full justify-center"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                            <line x1="12" y1="5" x2="12" y2="19" />
+                            <line x1="5" y1="12" x2="19" y2="12" />
                           </svg>
-                        </div>
-                        <div className="flex-1 pr-3">
-                          <p className="text-[10px] font-semibold uppercase tracking-widest mb-0.5" style={{ color: '#94A3B8' }}>
-                            {lang === 'es' ? 'Otro Enlace' : 'Other Link'}
-                          </p>
-                          <input
-                            type="url"
-                            value={customLink}
-                            onChange={(e) => setCustomLink(e.target.value)}
-                            placeholder="https://tudominio.com"
-                            className="w-full bg-transparent text-sm text-white placeholder-[var(--text-dim)] outline-none border-none"
-                          />
-                        </div>
-                      </motion.div>
+                          {lang === 'es' ? 'Agregar otro enlace' : 'Add another link'}
+                        </motion.button>
+                      )}
 
                     </div>
+                    <AIFieldAssistant fieldType="contact" contextData={{ niche: effectiveNiche }} onSelect={() => {}} language={lang} />
                   </motion.section>
 
 
@@ -945,6 +1052,33 @@ export default function App() {
                         </motion.button>
                       </div>
                     </div>
+                    <AIFieldAssistant
+                      fieldType="assets"
+                      contextData={{ description: desc, niche: effectiveNiche }}
+                      onSelect={() => {}}
+                      onSelectField={(field, text) => {
+                        if (field === 'logo') {
+                          setLogoAnnotation(text)
+                        } else if (field.startsWith('asset_')) {
+                          const idx = parseInt(field.split('_')[1], 10) - 1
+                          setAssets(prev => {
+                            const updated = [...prev]
+                            if (updated[idx]) updated[idx] = { ...updated[idx], annotation: text }
+                            return updated
+                          })
+                        } else if (field.startsWith('testimonial_')) {
+                          const parts = field.split('_')
+                          const idx = parseInt(parts[1], 10)
+                          const subfield = parts[2] as 'name' | 'role' | 'text'
+                          setTestimonials(prev => {
+                            const updated = [...prev]
+                            if (updated[idx]) updated[idx] = { ...updated[idx], [subfield]: text }
+                            return updated
+                          })
+                        }
+                      }}
+                      language={lang}
+                    />
                   </motion.section>
 
                   {/* 9 — Inspiration */}
@@ -1021,6 +1155,22 @@ export default function App() {
                         </span>
                       </motion.button>
                     </div>
+                    <AIFieldAssistant
+                      fieldType="inspiration"
+                      contextData={{ niche: effectiveNiche, description: desc }}
+                      onSelect={() => {}}
+                      onSelectField={(field, text) => {
+                        if (field.startsWith('inspiration_')) {
+                          const idx = parseInt(field.split('_')[1], 10) - 1
+                          setInspirations(prev => {
+                            const updated = [...prev]
+                            if (updated[idx]) updated[idx] = { ...updated[idx], annotation: text }
+                            return updated
+                          })
+                        }
+                      }}
+                      language={lang}
+                    />
                   </motion.section>
 
                   {/* Output */}
@@ -1031,6 +1181,7 @@ export default function App() {
                       onUnlock={() => setShowPaywall(true)}
                       onCopy={handlePromptCopy}
                       onExportZip={handleExportZip}
+                      onSave={user ? handlePromptCopy : undefined}
                     />
                   </motion.section>
 
@@ -1110,6 +1261,7 @@ export default function App() {
                   </motion.footer>
                 </div>
               </main>
+              </div>{/* flex-1 */}
             </div>
           </motion.div>
         ) : (

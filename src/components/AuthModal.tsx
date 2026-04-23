@@ -1,6 +1,12 @@
+/// <reference types="vite/client" />
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Turnstile } from '@marsidev/react-turnstile'
 import { useAuth } from '../context/AuthContext'
+
+const TURNSTILE_SITE_KEY = import.meta.env.DEV
+    ? '1x00000000000000000000AA'
+    : (import.meta.env.VITE_TURNSTILE_SITE_KEY as string)
 
 interface AuthModalProps { onSuccess: () => void }
 
@@ -12,9 +18,11 @@ export default function AuthModal({ onSuccess }: AuthModalProps) {
     const [lastName, setLastName] = useState('')
     const [phone, setPhone] = useState('')
     const [email, setEmail] = useState('')
+    const [password, setPassword] = useState('')
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
     const [success, setSuccess] = useState(false)
+    const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
 
     if (!showAuth) return null
 
@@ -23,14 +31,19 @@ export default function AuthModal({ onSuccess }: AuthModalProps) {
         setError('')
         setLoading(true)
 
-        if (mode === 'register') {
-            const res = await signUp(email, '', { first_name: firstName, last_name: lastName, phone })
-            if (res.error) { setError(res.error); setLoading(false) }
-            else { setSuccess(true); setTimeout(() => { setShowAuth(false); onSuccess() }, 1800) }
-        } else {
-            const res = await signIn(email, '')
-            if (res.error) { setError(res.error); setLoading(false) }
-            else { setShowAuth(false); onSuccess() }
+        try {
+            if (mode === 'register') {
+                const res = await signUp(email, password, { first_name: firstName, last_name: lastName, phone })
+                if (res.error) { setError(res.error); setLoading(false) }
+                else { setSuccess(true); setTimeout(() => { setShowAuth(false); onSuccess() }, 1800) }
+            } else {
+                const res = await signIn(email, password)
+                if (res.error) { setError(res.error); setLoading(false) }
+                else { setLoading(false); setShowAuth(false); onSuccess() }
+            }
+        } catch {
+            setError('Error inesperado. Verifica tu conexión e intenta de nuevo.')
+            setLoading(false)
         }
     }
 
@@ -78,7 +91,7 @@ export default function AuthModal({ onSuccess }: AuthModalProps) {
                                 {/* Tabs */}
                                 <div className="flex rounded-xl overflow-hidden mb-6 border border-white/5">
                                     {(['register', 'login'] as const).map((m) => (
-                                        <button key={m} onClick={() => { setMode(m); setError('') }}
+                                        <button key={m} onClick={() => { setMode(m); setError(''); setTurnstileToken(null) }}
                                             className={`flex-1 py-3 text-sm font-semibold transition-all duration-200 cursor-pointer border-none
                         ${mode === m ? 'bg-[var(--accent)] text-white' : 'bg-white/5 text-white/50 hover:text-white hover:bg-white/10'}`}
                                         >
@@ -109,19 +122,41 @@ export default function AuthModal({ onSuccess }: AuthModalProps) {
                                     <input type="email" value={email} onChange={e => setEmail(e.target.value)}
                                         placeholder="Correo electrónico" required className="input-glow text-sm" />
 
+                                    <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+                                        placeholder="Contraseña (mín. 6 caracteres)" required minLength={6}
+                                        className="input-glow text-sm" />
+
                                     {mode === 'login' && (
                                         <p className="text-xs text-white/40 text-center">
-                                            Ingresa el correo con el que te registraste
+                                            Ingresa el correo y contraseña con los que te registraste
                                         </p>
                                     )}
 
                                     {error && (
-                                        <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}
-                                            className="text-red-400 text-xs text-center bg-red-400/10 rounded-lg py-2 px-3"
-                                        >{error}</motion.p>
+                                        <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}
+                                            className="rounded-lg py-2 px-3 bg-red-400/10 flex items-center justify-between gap-2"
+                                        >
+                                            <p className="text-red-400 text-xs">{error}</p>
+                                            {(error.includes('tardó') || error.includes('conexión') || error.includes('internet')) && (
+                                                <button type="button" onClick={() => { setError(''); setLoading(false) }}
+                                                    className="text-[10px] font-semibold text-red-300 underline cursor-pointer bg-transparent border-none shrink-0">
+                                                    Reintentar
+                                                </button>
+                                            )}
+                                        </motion.div>
                                     )}
 
-                                    <motion.button type="submit" disabled={loading}
+                                    {mode === 'register' && (
+                                        <Turnstile
+                                            siteKey={TURNSTILE_SITE_KEY}
+                                            onSuccess={(token) => setTurnstileToken(token)}
+                                            onError={() => setTurnstileToken(null)}
+                                            onExpire={() => setTurnstileToken(null)}
+                                            options={{ theme: 'dark', size: 'flexible' }}
+                                        />
+                                    )}
+
+                                    <motion.button type="submit" disabled={loading || (mode === 'register' && !turnstileToken)}
                                         whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                                         className="w-full py-3.5 rounded-xl bg-[var(--accent)] text-white font-bold text-sm
                       hover:brightness-110 transition-all duration-200 cursor-pointer border-none
@@ -137,7 +172,7 @@ export default function AuthModal({ onSuccess }: AuthModalProps) {
 
                                 <p className="text-center text-xs text-white/30 mt-5">
                                     {mode === 'register' ? '¿Ya tienes cuenta?' : '¿No tienes cuenta?'}{' '}
-                                    <button onClick={() => { setMode(mode === 'register' ? 'login' : 'register'); setError('') }}
+                                    <button onClick={() => { setMode(mode === 'register' ? 'login' : 'register'); setError(''); setTurnstileToken(null) }}
                                         className="text-[var(--accent)] hover:underline cursor-pointer bg-transparent border-none font-medium"
                                     >
                                         {mode === 'register' ? 'Inicia sesión' : 'Regístrate'}

@@ -11,7 +11,7 @@ export interface PromptInputs {
   facebook?: string          // Facebook URL
   tiktok?: string            // TikTok URL
   linkedin?: string          // LinkedIn URL
-  customLink?: string        // Custom Website / Link URL
+  customLinks?: string[]     // Custom Website / Link URLs
   logoAnnotation?: string    // Text annotation for logo image
   logoDataUrl?: string       // Base64 image data for the logo
   clientLogos?: Array<{ dataUrl: string; annotation: string }> // Client logos / Testimonials
@@ -624,7 +624,7 @@ function detectIndustryProfile(niche: string): IndustryProfile {
 export function generatePrompt(inputs: PromptInputs): string {
   const {
     description, niche, vibe, sections, cta, lang = 'en',
-    siteLang, whatsapp, instagram, facebook, tiktok, linkedin, customLink,
+    siteLang, whatsapp, instagram, facebook, tiktok, linkedin, customLinks,
     logoDataUrl,
     logoAnnotation,
     clientLogos = [],
@@ -826,7 +826,8 @@ export function generatePrompt(inputs: PromptInputs): string {
   }
 
   // ── Social Media Links ────────────────────────────────────────────────────
-  const hasSocials = instagram || facebook || tiktok || linkedin || customLink
+  const hasCustomLinks = customLinks && customLinks.length > 0
+  const hasSocials = instagram || facebook || tiktok || linkedin || hasCustomLinks
   if (hasSocials) {
     lines.push(``)
     if (lang === 'es') {
@@ -836,7 +837,7 @@ export function generatePrompt(inputs: PromptInputs): string {
       if (facebook) lines.push(`  · Facebook: ${facebook}`)
       if (tiktok) lines.push(`  · TikTok: ${tiktok}`)
       if (linkedin) lines.push(`  · LinkedIn: ${linkedin}`)
-      if (customLink) lines.push(`  · Enlace personalizado: ${customLink}`)
+      if (customLinks) customLinks.forEach(l => lines.push(`  · Enlace personalizado: ${l}`))
       lines.push(`- IMPORTANTE: SOLO muestra los íconos para las redes que SÍ tienen un enlace explícito aquí arriba. Las opciones NO proporcionadas (ej. si falta TikTok o LinkedIn) NO DEBEN aparecer bajo ninguna circunstancia en tu diseño, ni siquiera como íconos ocultos, inactivos o con href="#". Omitelas por completo.`)
       lines.push(`- Al hacer clic, deben abrirse en una nueva pestaña (target="_blank" rel="noopener noreferrer").`)
     } else {
@@ -846,7 +847,7 @@ export function generatePrompt(inputs: PromptInputs): string {
       if (facebook) lines.push(`  · Facebook: ${facebook}`)
       if (tiktok) lines.push(`  · TikTok: ${tiktok}`)
       if (linkedin) lines.push(`  · LinkedIn: ${linkedin}`)
-      if (customLink) lines.push(`  · Custom Link: ${customLink}`)
+      if (customLinks) customLinks.forEach(l => lines.push(`  · Custom Link: ${l}`))
       lines.push(`- IMPORTANT: ONLY show icons for networks that DO have an explicit link provided above. Options NOT provided (e.g. if TikTok or LinkedIn is missing) MUST NOT appear under any circumstances in your design, not even as hidden/inactive icons or with href="#". Omit them completely from the HTML.`)
       lines.push(`- All links must open in a new tab (target="_blank" rel="noopener noreferrer").`)
     }

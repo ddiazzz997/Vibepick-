@@ -35,38 +35,40 @@ const translations = {
         // Problem Section
         problemTitle1: 'Building a website used to be a nightmare.',
         problemTitle2: 'But your competition already has theirs.',
-        problemBody1: 'You face complicated builders where nothing fits, or you resign yourself to paying $3,000 to an agency that will take weeks. Meanwhile, you keep losing clients online.',
+        problemBody1: 'You face complicated builders where nothing fits, or you resign yourself to paying $1,200 to an agency that will take weeks. Meanwhile, you keep losing clients online.',
         problemBody2: 'What if you could skip the boring part? Straight to the final result: a page that looks incredible and brings clients on autopilot.',
 
         // Benefits
         benefitsTag: 'Why it works',
         benefitsTitle: 'From your idea to the screen, no middlemen',
         benefitsItems: [
-            { title: 'Zero technical barriers', desc: 'You don\'t need to learn about margins, colors, or servers. If you can describe what you do, you already have everything you need for a high-level page.' },
-            { title: 'Designed to make cash', desc: 'A website that doesn\'t sell is just an expensive digital brochure. We give you the exact structure so your visitors go from looking to buying immediately.' },
-            { title: 'Your business running in minutes', desc: 'Think it, type it into our system, copy the result, and launch it. Go from "I don\'t have a page" to "here is my link" in the same afternoon.' },
-            { title: 'Top tier agency technology', desc: 'The best digital agencies already use AI to design high-performance websites. The difference is they charge thousands. Here you have the same engine, but you do it yourself.' },
+            { title: 'Zero technical barriers', desc: 'If you can describe it, you already have it. No code. No tutorials. No frustration.' },
+            { title: 'Built to sell', desc: "It's not a pretty page. It's a client-capturing machine. Every section has a purpose." },
+            { title: 'From idea to link in minutes', desc: 'Today you can say "here\'s my site." No weeks. No agency. No waiting.' },
+            { title: 'Secure from the first prompt', desc: '90% of AI-built sites have vulnerabilities. Vibepick prompts include web security best practices so your business is protected from day one.' },
         ],
 
         // Why Vibepick
         whyTag: 'The Vibepick Difference',
         whyTitle: 'Why choose Vibepick?',
         whyItems: [
-            { title: 'Built by conversion specialists', desc: 'Behind Vibepick are experts in high-performance websites — the ones that transform traffic into real revenue. Conversion engineers.' },
-            { title: 'Access that was once exclusive', desc: 'Professional AI prompts for agency-level websites are a well-kept secret. Vibepick puts them in your hands. No middlemen. No waiting. No excuses.' },
-            { title: 'Your first impression defines everything', desc: '75% of people judge a business\'s credibility by its website. What does yours say? Or worse — what does NOT having one say?' },
+            { title: 'Real conversion engineering', desc: "Not a pretty builder. The result of years optimizing sites that actually sell." },
+            { title: 'What agencies charge $1,200 for — in minutes', desc: 'No middlemen. No waiting. You in control.' },
+            { title: 'Your first impression is worth millions', desc: '75% of people decide if they trust you based on your website. Is yours closing deals — or driving them away?' },
+            { title: 'Security that Vibecoding doesn\'t give you', desc: 'AI makes pretty sites. But pretty isn\'t secure. Vibepick prompts include web security layers that protect your business and your clients\' data from day one.' },
         ],
 
         // FAQ
         faqTag: 'Common Questions',
         faqTitle: 'Frequently Asked Questions',
         faqItems: [
-            { q: 'What exactly is Vibepick?', a: 'It\'s an AI system that generates professional prompts to create high-performance websites. You describe your business, Vibepick does the rest.' },
-            { q: 'Do I need to know how to code?', a: 'No. If you can describe your business in one sentence, you already know everything you need. Vibepick translates your vision into perfect technical instructions.' },
-            { q: 'Can I try it before paying?', a: 'Yes. You get 2 completely free generations to see the quality for yourself. No credit card. No commitment.' },
-            { q: 'Why not just use ChatGPT?', a: 'You can. But writing a prompt that actually generates a website that converts requires understanding design, UX, copywriting and web architecture. Vibepick condenses all of that into one click.' },
-            { q: 'How good is it compared to an agency?', a: 'Vibepick prompts are designed with the same methodologies agencies charge $2,000–$5,000 for. They take weeks. You take minutes.' },
-            { q: 'What do I do after generating my prompt?', a: 'Copy it and paste it into any AI builder: Lovable, Bolt, v0, or AntiGravity AI Studio. In seconds you\'ll have your website ready.' },
+            { q: 'What exactly is Vibepick?', a: "It's the missing piece any AI needs to build a website that actually works. You describe, Vibepick turns your idea into perfect instructions. Zero guesswork." },
+            { q: 'Do I need to know how to code?', a: 'Not at all. If you can describe your business in one sentence — which you already do every day — you know everything you need. The technical part is our problem.' },
+            { q: 'Can I try it before paying?', a: '2 completely free generations. No credit card. No catch. Use them and judge for yourself. Most people decide after the first one.' },
+            { q: 'Why not just use ChatGPT?', a: "ChatGPT doesn't know UX, conversion copywriting, or web architecture. Vibepick condensed years of that into a system. It's like comparing a top chef vs. Googling recipes." },
+            { q: 'How good is it compared to an agency?', a: 'Agencies charge $1,200–$5,000 and take weeks. Vibepick uses the same methodologies — in minutes and at a fraction of the cost. The difference: you\'re in control.' },
+            { q: 'What do I do after generating my prompt?', a: 'Copy and paste it into Lovable, Bolt, v0, or AntiGravity AI Studio. In seconds your site comes to life. No code. No complications. Just results.' },
+            { q: 'Will my AI-built site be secure?', a: "That's the question nobody's asking — and they should be. Most AI-built sites are vulnerable: no proper HTTPS, no form validation, no data protection. Vibepick prompts are designed to include these security layers. Your business deserves a site that doesn't just look good — it protects your clients too." },
         ],
 
         // CTA Final
@@ -208,38 +210,40 @@ const translations = {
         // Problem Section
         problemTitle1: 'Hacer una página web solía ser una pesadilla.',
         problemTitle2: 'Pero tu competencia ya tiene la suya.',
-        problemBody1: 'Te enfrentas a constructores complicados donde nada cuadra, o te resignas a pagarle $3,000 USD a una agencia que tardará semanas. Mientras tanto, sigues perdiendo clientes en internet.',
+        problemBody1: 'Te enfrentas a constructores complicados donde nada cuadra, o te resignas a pagarle $1,200 USD a una agencia que tardará semanas. Mientras tanto, sigues perdiendo clientes en internet.',
         problemBody2: '¿Y si pudieras saltarte la parte aburrida? Directo al resultado final: una página que se ve increíble y trae clientes en automático.',
 
         // Benefits
         benefitsTag: 'Por qué funciona',
         benefitsTitle: 'De la idea a tu pantalla, sin intermediarios',
         benefitsItems: [
-            { title: 'Cero barrera técnica', desc: 'No necesitas aprender sobre márgenes, colores o servidores. Si sabes describir a qué te dedicas, ya tienes todo lo necesario para tener una página de alto nivel.' },
-            { title: 'Diseñado para hacer caja', desc: 'Una página web que no vende es solo un folleto digital caro. Te entregamos la estructura exacta para que tus visitantes pasen de mirar a comprar inmediatamente.' },
-            { title: 'Tu negocio funcionando en minutos', desc: 'Piénsalo, escríbelo en nuestro sistema, copia el resultado y lánzalo. Pasa de "no tengo página" a "aquí está mi enlace" en la misma tarde.' },
-            { title: 'Tecnología de agencia top', desc: 'Las mejores agencias digitales ya usan IA para diseñar sitios de alto rendimiento. La diferencia es que ellas cobran miles. Aquí tienes el mismo motor, pero lo haces tú mismo.' },
+            { title: 'Cero barrera técnica', desc: 'Si puedes describirlo, ya lo tienes. Sin código. Sin tutoriales. Sin frustraciones.' },
+            { title: 'Diseñado para vender', desc: 'No es una página bonita. Es una máquina de capturar clientes. Cada sección tiene un propósito.' },
+            { title: 'De idea a enlace en minutos', desc: 'Hoy mismo puedes decir "aquí está mi página". Sin semanas. Sin agencia. Sin esperas.' },
+            { title: 'Seguro desde el primer prompt', desc: 'El 90% de los sitios creados con IA tienen vulnerabilidades. Los prompts de Vibepick incluyen buenas prácticas de seguridad web para que tu negocio esté protegido desde el día uno.' },
         ],
 
         // Why Vibepick
         whyTag: 'La Diferencia Vibepick',
         whyTitle: '¿Por qué elegir Vibepick?',
         whyItems: [
-            { title: 'Creado por especialistas en conversión', desc: 'Detrás de Vibepick hay expertos en sitios web de alto rendimiento — los que transforman tráfico en ingresos reales. Ingenieros de conversión.' },
-            { title: 'Acceso que antes era exclusivo', desc: 'Los prompts profesionales de IA para sitios web de agencia son un secreto bien guardado. Vibepick los pone en tus manos. Sin intermediarios. Sin esperas. Sin excusas.' },
-            { title: 'Tu primera impresión define todo', desc: 'El 75% de las personas juzga la credibilidad de un negocio por su sitio web. ¿Qué dice el tuyo sobre ti? O peor — ¿qué dice no tener uno?' },
+            { title: 'Ingeniería de conversión real', desc: 'No es un constructor bonito. Es el resultado de años optimizando sitios que realmente venden.' },
+            { title: 'Lo que las agencias cobran $1,200 por hacer — tú lo haces en minutos', desc: 'Sin intermediarios. Sin esperas. Tú en control.' },
+            { title: 'Tu primera impresión vale millones', desc: 'El 75% de la gente decide si confía en ti por tu sitio web. ¿El tuyo está cerrando ventas o ahuyentando clientes?' },
+            { title: 'Seguridad que el Vibecoding no te da', desc: 'La IA puede hacer sitios bonitos. Pero bonito no significa seguro. Vibepick genera prompts que contemplan seguridad web, protegiendo tu negocio y la data de tus clientes desde el día uno.' },
         ],
 
         // FAQ
         faqTag: 'Preguntas Comunes',
         faqTitle: 'Preguntas Frecuentes',
         faqItems: [
-            { q: '¿Qué es Vibepick exactamente?', a: 'Es un sistema de IA que genera prompts profesionales para crear sitios web de alto rendimiento. Tú describes tu negocio, Vibepick hace el resto.' },
-            { q: '¿Necesito saber programar?', a: 'No. Si puedes describir tu negocio en una frase, ya sabes todo lo que necesitas. Vibepick traduce tu visión en instrucciones técnicas perfectas.' },
-            { q: '¿Puedo probarlo antes de pagar?', a: 'Sí. Tienes 2 generaciones completamente gratis para que veas la calidad por ti mismo. Sin tarjeta. Sin compromiso.' },
-            { q: '¿Por qué no simplemente usar ChatGPT?', a: 'Puedes. Pero escribir un prompt que realmente genere un sitio web que convierta requiere entender diseño, UX, copywriting y arquitectura web. Vibepick condensa todo eso en un clic.' },
-            { q: '¿Qué tan bueno es comparado con una agencia?', a: 'Los prompts de Vibepick están diseñados con las mismas metodologías que usan agencias que cobran $2,000–$5,000 USD. Ellas tardan semanas. Tú tardas minutos.' },
-            { q: '¿Qué hago después de generar mi prompt?', a: 'Cópialo y pégalo en cualquier constructor IA: Lovable, Bolt, v0, o AntiGravity AI Studio. En segundos tendrás tu sitio web listo.' },
+            { q: '¿Qué es Vibepick exactamente?', a: 'Es el sistema que le falta a cualquier IA para crear un sitio web que realmente funcione. Tú describes, Vibepick convierte tu idea en instrucciones perfectas. Cero conjeturas.' },
+            { q: '¿Necesito saber programar?', a: 'Para nada. Si puedes describir tu negocio en una frase — lo cual ya haces todos los días — ya sabes todo lo que necesitas. Lo técnico es nuestro problema.' },
+            { q: '¿Puedo probarlo antes de pagar?', a: '2 generaciones completamente gratis. Sin tarjeta. Sin trampa. Úsalos y juzga tú mismo. La mayoría no necesita más de uno para decidir.' },
+            { q: '¿Por qué no simplemente usar ChatGPT?', a: 'ChatGPT no sabe de UX, ni de copy de conversión, ni de arquitectura web. Vibepick condensó años de eso en un sistema. Es como comparar un chef profesional con buscar recetas en Google.' },
+            { q: '¿Qué tan bueno es comparado con una agencia?', a: 'Las agencias cobran $1,200–$5,000 USD y tardan semanas. Vibepick usa las mismas metodologías — en minutos y por una fracción del precio. La diferencia es que tú tienes el control.' },
+            { q: '¿Qué hago después de generar mi prompt?', a: 'Lo copias y pegas en Lovable, Bolt, v0 o AntiGravity AI Studio. En segundos tu sitio toma vida. Sin código. Sin complicaciones. Solo resultado.' },
+            { q: '¿Mi sitio web será seguro si lo hago con IA?', a: 'Esa es la pregunta que nadie está haciendo — y deberían. La mayoría de sitios creados con IA son vulnerables: sin HTTPS correcto, sin validación de formularios, sin protección de datos. Los prompts de Vibepick están diseñados para incluir estas capas de seguridad. Tu negocio merece un sitio que no solo se vea bien, sino que proteja a tus clientes.' },
         ],
 
         // CTA Final

@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { sheets } from '../lib/sheets'
+import { supabase } from '../lib/supabase'
 import { GoogleGenerativeAI } from '@google/generative-ai'
+import {
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+    ResponsiveContainer,
+} from 'recharts'
 
 // ── Gemini setup (reuse existing key) ───────────────────
 // @ts-ignore
@@ -18,11 +22,14 @@ interface DashUser {
 interface DashScore { email: string; score: number; nivel: string }
 interface DashPipeline { email: string; name: string; stage: string; updatedAt: string; notes?: string }
 interface DashSession { email: string; duration: number; prompts: number; date: string }
+interface ChurnMonthly { month: string; churn_rate: number; churned_users?: number; total_users?: number }
+interface LtvUser { user_id: string; cohort_month: string; ltv: number; is_pro: boolean }
+interface CohortRow { cohort: string; users: number; avgLtv: number; proCount: number }
 
 // ── Constants ────────────────────────────────────────────
 const STAGES = ['🌱 Nuevo', '👀 Explorador', '🔥 Engaged', '💰 Hot Lead', '✅ Pro', '❌ Inactivo']
 
-type Tab = 'usuarios' | 'seguimiento' | 'sesiones' | 'pqr'
+type Tab = 'usuarios' | 'seguimiento' | 'sesiones' | 'pqr' | 'metricas'
 
 // ── Strategy engine (Hormozi + Brunson) ──────────────────
 function getStrategy(u: DashUser, pipe?: DashPipeline): { label: string; detail: string; color: string } {
@@ -448,29 +455,84 @@ function ClientCard({ u, pipe, score, onActivatePro, onOpenMessenger, onStageCha
     )
 }
 
+// ── Month formatter (e.g. "2026-01" → "Ene 26") ─────────
+const MONTH_NAMES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
+function formatMonth(m: string): string {
+    const [yr, mo] = m.split('-')
+    if (!yr || !mo) return m
+    return `${MONTH_NAMES[parseInt(mo) - 1] ?? mo} ${yr.slice(2)}`
+}
+
+// ── Pipeline localStorage ────────────────────────────────
+const LS_PIPELINE = 'vp_pipeline_v2'
+function loadPipelineLocal(): DashPipeline[] {
+    try { return JSON.parse(localStorage.getItem(LS_PIPELINE) ?? '[]') } catch { return [] }
+}
+function savePipelineLocal(data: DashPipeline[]) {
+    localStorage.setItem(LS_PIPELINE, JSON.stringify(data))
+}
+
 // ── MAIN ─────────────────────────────────────────────────
 export default function AdminDashboard() {
     const [users, setUsers] = useState<DashUser[]>([])
     const [scores, setScores] = useState<DashScore[]>([])
     const [pipeline, setPipeline] = useState<DashPipeline[]>([])
     const [sessions, setSessions] = useState<DashSession[]>([])
+    const [churnData, setChurnData] = useState<ChurnMonthly[]>([])
+    const [ltvData, setLtvData] = useState<LtvUser[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
     const [search, setSearch] = useState('')
     const [tab, setTab] = useState<Tab>('usuarios')
     const [messenger, setMessenger] = useState<DashUser | null>(null)
 
-    const load = () => {
+    const load = async () => {
         setLoading(true)
-        sheets.getDashboard().then(res => {
-            if (res.success) {
-                setUsers(res.users || [])
-                setScores(res.scores || [])
-                setPipeline(res.pipeline || [])
-                setSessions(res.sessions || [])
-            } else setError(res.error || 'Error')
-            setLoading(false)
-        })
+        setError('')
+        try {
+            const [{ data: usersRaw, error: usersErr }, { data: creditsRaw }] = await Promise.all([
+                supabase.from('users').select('*').order('created_at', { ascending: false }),
+                supabase.from('user_credits').select('user_id, credits'),
+            ])
+            if (usersErr) throw usersErr
+
+            const creditsMap: Record<string, number> = {}
+            for (const c of creditsRaw ?? []) creditsMap[c.user_id] = c.credits
+
+            const mappedUsers: DashUser[] = (usersRaw ?? []).map(u => ({
+                id: u.id as string,
+                name: (`${u.first_name ?? ''} ${u.last_name ?? ''}`).trim() || (u.email as string),
+                email: u.email as string,
+                phone: (u.phone ?? '') as string,
+                registeredAt: new Date(u.created_at as string).toLocaleDateString('es-CO'),
+                isPro: (u.is_pro ?? false) as boolean,
+                sessionCount: 0,
+                totalMinutes: 0,
+            }))
+
+            const mappedScores: DashScore[] = mappedUsers.map(u => {
+                const credits = creditsMap[u.id] ?? 0
+                const score = u.isPro ? 75 : Math.min(Math.floor(credits * 5), 60)
+                const nivel = score >= 70 ? '🟢 Activo' : score >= 35 ? '🟡 Potencial' : '🔴 En riesgo'
+                return { email: u.email, score, nivel }
+            })
+
+            setUsers(mappedUsers)
+            setScores(mappedScores)
+            setPipeline(loadPipelineLocal())
+            setSessions([])
+
+            // ── Métricas: churn + LTV (vistas opcionales — error silencioso) ──
+            const [churnResult, ltvResult] = await Promise.all([
+                supabase.from('v_churn_rate_monthly').select('*').order('month', { ascending: true }).limit(6),
+                supabase.from('v_ltv_per_user').select('*'),
+            ])
+            setChurnData((churnResult.data ?? []) as ChurnMonthly[])
+            setLtvData((ltvResult.data ?? []) as LtvUser[])
+        } catch (e: unknown) {
+            setError((e as Error)?.message || 'Error al cargar datos de Supabase')
+        }
+        setLoading(false)
     }
     useEffect(() => { load() }, [])
 
@@ -500,7 +562,36 @@ export default function AdminDashboard() {
         { id: 'usuarios', label: '👥 Usuarios' },
         { id: 'seguimiento', label: '📊 Seguimiento' },
         { id: 'sesiones', label: '⏱️ Sesiones' },
+        { id: 'metricas', label: '📈 Métricas' },
     ]
+
+    // ── Churn derivations ────────────────────────────────
+    const normalizeRate = (r: number) => r <= 1 ? r * 100 : r
+    const churnChart = churnData.map(d => ({
+        month: formatMonth(d.month),
+        churn: parseFloat(normalizeRate(d.churn_rate).toFixed(1)),
+    }))
+    const lastChurn = churnData.length > 0 ? normalizeRate(churnData[churnData.length - 1].churn_rate) : null
+    const prevChurn = churnData.length > 1 ? normalizeRate(churnData[churnData.length - 2].churn_rate) : null
+    const churnTrend = lastChurn !== null && prevChurn !== null
+        ? lastChurn > prevChurn ? 'up' : lastChurn < prevChurn ? 'down' : 'flat'
+        : 'flat'
+
+    // ── LTV derivations ──────────────────────────────────
+    const cohortMap: Record<string, { users: number; ltv: number; pro: number }> = {}
+    for (const row of ltvData) {
+        const k = row.cohort_month
+        if (!cohortMap[k]) cohortMap[k] = { users: 0, ltv: 0, pro: 0 }
+        cohortMap[k].users++
+        cohortMap[k].ltv += row.ltv
+        if (row.is_pro) cohortMap[k].pro++
+    }
+    const cohortRows: CohortRow[] = Object.entries(cohortMap)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([cohort, d]) => ({ cohort, users: d.users, avgLtv: d.ltv / d.users, proCount: d.pro }))
+    const globalAvgLtv = ltvData.length
+        ? ltvData.reduce((s, r) => s + r.ltv, 0) / ltvData.length
+        : 0
 
     // Session insights
     const thisWeekSessions = sessions.filter(s => {
@@ -510,20 +601,25 @@ export default function AdminDashboard() {
     const powerUsers = users.filter(u => !u.isPro && u.sessionCount >= 5)
 
     const handleActivatePro = async (email: string) => {
-        await sheets.upgradeToPro(email)
+        await supabase.from('users').update({ is_pro: true }).eq('email', email)
         load()
     }
-    const handleStageChange = async (email: string, stage: string) => {
-        // Optimistic update
+    const handleStageChange = (email: string, stage: string) => {
         setPipeline(prev => {
             const existing = prev.find(p => p.email === email)
-            if (existing) return prev.map(p => p.email === email ? { ...p, stage } : p)
-            const user = users.find(u => u.email === email)
-            return [...prev, { email, name: user?.name || '', stage, updatedAt: new Date().toISOString() }]
+            const next = existing
+                ? prev.map(p => p.email === email ? { ...p, stage, updatedAt: new Date().toISOString() } : p)
+                : [...prev, { email, name: users.find(u => u.email === email)?.name || '', stage, updatedAt: new Date().toISOString() }]
+            savePipelineLocal(next)
+            return next
         })
     }
     const handleSaveNote = (email: string, note: string) => {
-        setPipeline(prev => prev.map(p => p.email === email ? { ...p, notes: note } : p))
+        setPipeline(prev => {
+            const next = prev.map(p => p.email === email ? { ...p, notes: note } : p)
+            savePipelineLocal(next)
+            return next
+        })
     }
 
     return (
@@ -771,6 +867,137 @@ export default function AdminDashboard() {
                                 </div>
                             </motion.div>
                         )}
+                        {/* ── Métricas ── */}
+                        {tab === 'metricas' && (
+                            <motion.div key="metricas" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-8">
+
+                                {/* ── CHURN RATE ── */}
+                                <div>
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div>
+                                            <h2 className="text-base font-bold text-white">Churn Rate Mensual</h2>
+                                            <p className="text-[11px] text-white/30 mt-0.5">% usuarios sin ningún prompt en los últimos 30 días</p>
+                                        </div>
+                                        {lastChurn !== null && (
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-3xl font-black" style={{ color: lastChurn >= 20 ? '#ef4444' : lastChurn >= 10 ? '#f97316' : '#22c55e' }}>
+                                                    {lastChurn.toFixed(1)}%
+                                                </span>
+                                                {churnTrend !== 'flat' && (
+                                                    <div className="flex flex-col items-center" style={{ color: churnTrend === 'up' ? '#ef4444' : '#22c55e' }}>
+                                                        <span className="text-lg font-black leading-none">{churnTrend === 'up' ? '↑' : '↓'}</span>
+                                                        <span className="text-[9px] font-semibold uppercase tracking-wider">{churnTrend === 'up' ? 'Sube' : 'Baja'}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="rounded-2xl p-5" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                                        {churnChart.length === 0 ? (
+                                            <div className="flex flex-col items-center justify-center py-12 gap-2">
+                                                <span className="text-2xl">📊</span>
+                                                <p className="text-white/20 text-sm">Sin datos aún — vista <code className="text-white/30">v_churn_rate_monthly</code> pendiente</p>
+                                            </div>
+                                        ) : (
+                                            <ResponsiveContainer width="100%" height={220}>
+                                                <BarChart data={churnChart} barCategoryGap="35%">
+                                                    <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.04)" />
+                                                    <XAxis dataKey="month" tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 11 }} axisLine={false} tickLine={false} />
+                                                    <YAxis tickFormatter={v => `${v}%`} tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 11 }} axisLine={false} tickLine={false} width={40} />
+                                                    <Tooltip
+                                                        cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+                                                        content={({ active, payload, label }) => {
+                                                            if (!active || !payload?.length) return null
+                                                            const val = payload[0].value as number
+                                                            return (
+                                                                <div style={{ background: '#0f1628', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '8px 14px' }}>
+                                                                    <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.72rem', marginBottom: 4 }}>{label}</p>
+                                                                    <p style={{ color: val >= 20 ? '#ef4444' : val >= 10 ? '#f97316' : '#22c55e', fontWeight: 700, fontSize: '1rem' }}>{val.toFixed(1)}%</p>
+                                                                </div>
+                                                            )
+                                                        }}
+                                                    />
+                                                    <Bar dataKey="churn" radius={[6, 6, 0, 0]}
+                                                        fill="url(#churnGrad)"
+                                                    />
+                                                    <defs>
+                                                        <linearGradient id="churnGrad" x1="0" y1="0" x2="0" y2="1">
+                                                            <stop offset="0%" stopColor="#ef4444" stopOpacity={0.9} />
+                                                            <stop offset="100%" stopColor="#ef4444" stopOpacity={0.3} />
+                                                        </linearGradient>
+                                                    </defs>
+                                                </BarChart>
+                                            </ResponsiveContainer>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* ── LTV POR COHORTE ── */}
+                                <div>
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div>
+                                            <h2 className="text-base font-bold text-white">Lifetime Value por Cohorte</h2>
+                                            <p className="text-[11px] text-white/30 mt-0.5">Agrupado por mes de registro del usuario</p>
+                                        </div>
+                                        {globalAvgLtv > 0 && (
+                                            <div className="text-right">
+                                                <p className="text-[10px] text-white/30 uppercase tracking-wider mb-0.5">LTV Global Promedio</p>
+                                                <p className="text-3xl font-black" style={{ color: '#a855f7' }}>
+                                                    ${globalAvgLtv.toFixed(2)}
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                        {cohortRows.length === 0 ? (
+                                            <div className="flex flex-col items-center justify-center py-12 gap-2">
+                                                <span className="text-2xl">💰</span>
+                                                <p className="text-white/20 text-sm">Sin datos aún — vista <code className="text-white/30">v_ltv_per_user</code> pendiente</p>
+                                            </div>
+                                        ) : (
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full text-sm">
+                                                    <thead>
+                                                        <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                                            {['Cohorte', 'Usuarios', 'LTV Promedio', '% Pro'].map(h => (
+                                                                <th key={h} className="text-left px-5 py-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.25)' }}>{h}</th>
+                                                            ))}
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {cohortRows.map((row, i) => {
+                                                            const pctPro = row.users > 0 ? (row.proCount / row.users) * 100 : 0
+                                                            return (
+                                                                <motion.tr key={row.cohort}
+                                                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.04 }}
+                                                                    style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}
+                                                                    className="hover:bg-white/[0.02] transition-colors">
+                                                                    <td className="px-5 py-3 font-semibold text-white">{formatMonth(row.cohort)}</td>
+                                                                    <td className="px-5 py-3" style={{ color: 'rgba(255,255,255,0.5)' }}>{row.users}</td>
+                                                                    <td className="px-5 py-3 font-bold" style={{ color: '#a855f7' }}>${row.avgLtv.toFixed(2)}</td>
+                                                                    <td className="px-5 py-3">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <div className="flex-1 max-w-[80px] h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                                                                                <div className="h-full rounded-full" style={{ width: `${pctPro}%`, background: '#22c55e' }} />
+                                                                            </div>
+                                                                            <span className="text-xs font-semibold" style={{ color: '#22c55e' }}>{pctPro.toFixed(0)}%</span>
+                                                                        </div>
+                                                                    </td>
+                                                                </motion.tr>
+                                                            )
+                                                        })}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                            </motion.div>
+                        )}
+
                     </AnimatePresence>
                 )}
             </div>

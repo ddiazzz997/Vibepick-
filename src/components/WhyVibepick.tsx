@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import { useLang } from '../lib/i18n'
 
-const icons = ['🔬', '🔓', '👁️']
+const icons = ['🔬', '🔓', '👁️', '🛡️']
 
 const columnVariants = {
     hidden: { opacity: 0, y: 30 },
@@ -47,7 +47,7 @@ export default function WhyVibepick() {
                 </motion.div>
 
                 {/* 3 Columns */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     {t.whyItems.map((item: { title: string; desc: string }, i: number) => (
                         <motion.div
                             key={i}

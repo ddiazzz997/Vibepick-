@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Copy, Check, ChevronDown, ChevronUp, Download, Lock, Sparkles } from 'lucide-react'
+import { Copy, Check, ChevronDown, ChevronUp, Download, Lock, Sparkles, BookmarkPlus, BookmarkCheck } from 'lucide-react'
 import { countWords } from '../lib/generatePrompt'
 import { useLang } from '../lib/i18n'
 
@@ -10,11 +10,13 @@ interface Props {
   onUnlock?: () => void
   onExportZip?: () => void
   onCopy?: () => void
+  onSave?: () => void
 }
 
-export default function PromptOutput({ prompt, isLocked, onUnlock, onExportZip, onCopy }: Props) {
+export default function PromptOutput({ prompt, isLocked, onUnlock, onExportZip, onCopy, onSave }: Props) {
   const { t } = useLang()
   const [copied, setCopied] = useState(false)
+  const [saved, setSaved] = useState(false)
   const [expanded, setExpanded] = useState(false)
   const [isZipping, setIsZipping] = useState(false)
   const words = countWords(prompt)
@@ -28,6 +30,13 @@ export default function PromptOutput({ prompt, isLocked, onUnlock, onExportZip, 
     setCopied(true)
     onCopy?.()
     setTimeout(() => setCopied(false), 2500)
+  }
+
+  const handleSave = async () => {
+    if (isLocked) { onUnlock?.(); return }
+    onSave?.()
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2500)
   }
 
   const handleZip = async () => {
@@ -50,7 +59,25 @@ export default function PromptOutput({ prompt, isLocked, onUnlock, onExportZip, 
           <span className="w-1.5 h-1.5 rounded-full bg-green-400 pulse" />
           <span className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-widest">{t.yourPrompt}</span>
         </div>
-        <span className="text-xs font-mono text-[var(--text-muted)]">{words} {t.words}</span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-mono text-[var(--text-muted)]">{words} {t.words}</span>
+          {onSave && (
+            <motion.button
+              onClick={handleSave}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              title={saved ? 'Guardado en historial' : 'Guardar en historial'}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-medium cursor-pointer transition-all duration-200 ${
+                saved
+                  ? 'bg-green-500/10 border-green-500/30 text-green-400'
+                  : 'bg-[var(--surface)] border-[var(--border)] text-[var(--text-muted)] hover:text-white hover:border-[rgba(0,102,255,0.4)] hover:bg-[rgba(0,102,255,0.08)]'
+              }`}
+            >
+              {saved ? <BookmarkCheck size={13} /> : <BookmarkPlus size={13} />}
+              {saved ? 'Guardado' : 'Guardar'}
+            </motion.button>
+          )}
+        </div>
       </div>
 
       {/* Preview box */}
