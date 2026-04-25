@@ -80,7 +80,8 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 
 function translateError(msg: string): string {
     const m = msg.toLowerCase()
-    if (m === 'timeout') return 'La conexión tardó demasiado. Verifica tu internet e inténtalo de nuevo.'
+    if (m === 'timeout' || m.includes('abort') || m.includes('cancelled'))
+        return 'La conexión está tardando. Espera unos segundos e intenta de nuevo, o si ya creaste tu cuenta, ve a "Iniciar sesión".'
     if (m.includes('already registered') || m.includes('already been registered'))
         return 'Este correo ya tiene una cuenta. Usa "Iniciar sesión".'
     if (m.includes('invalid login credentials') || m.includes('invalid credentials'))
@@ -124,7 +125,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                             .single()
 
                         if (!mounted) return
-                        setFullUser(data ? rowToSheetUser(data as UserRow) : null)
+
+                        if (data) {
+                            setFullUser(rowToSheetUser(data as UserRow))
+                        } else {
+                            // Profile missing — create it now.
+                            // Covers: pre-trigger users, trigger failure, signUp upsert failure.
+                            const m = session.user.user_metadata ?? {}
+                            await supabase.from('users').upsert({
+                                id:         session.user.id,
+                                email:      session.user.email ?? '',
+                                first_name: (m.first_name ?? '') as string,
+                                last_name:  (m.last_name  ?? '') as string,
+                                phone:      (m.phone      ?? '') as string,
+                                is_pro:     false,
+                            }, { onConflict: 'id' })
+
+                            await supabase.from('user_credits').upsert(
+                                { user_id: session.user.id, credits: 3 },
+                                { onConflict: 'user_id', ignoreDuplicates: true }
+                            )
+
+                            if (!mounted) return
+                            const { data: d2 } = await supabase
+                                .from('users').select('*').eq('id', session.user.id).single()
+                            setFullUser(d2 ? rowToSheetUser(d2 as UserRow) : null)
+                        }
                     } catch {
                         if (mounted) setFullUser(null)
                     }
@@ -156,31 +182,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         meta:     { first_name: string; last_name: string; phone: string }
     ): Promise<{ error: string | null }> => {
         try {
-            const { data, error } = await withTimeout(
-                supabase.auth.signUp({
-                    email,
-                    password,
-                    options: { data: { first_name: meta.first_name, last_name: meta.last_name, phone: meta.phone } },
-                }),
-                12000
-            )
-            if (error) return { error: translateError(error.message) }
+            const { data, error } = await supabase.auth.signUp({
+                email,
+                password,
+                options: { data: { first_name: meta.first_name, last_name: meta.last_name, phone: meta.phone } },
+            })
+
+            if (error) {
+                const m = error.message.toLowerCase()
+                // Email already exists = previous signup succeeded but network timed out on the browser.
+                // Attempt silent sign-in with same credentials to recover the session.
+                if (m.includes('already registered') || m.includes('already been registered')) {
+                    const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password })
+                    if (!signInErr) return { error: null }
+                }
+                return { error: translateError(error.message) }
+            }
             if (!data.user) return { error: 'No se pudo crear la cuenta. Intenta de nuevo.' }
 
-            // Explicitly create profile — belt + suspenders alongside DB trigger
-            await supabase.from('users').upsert({
-                id:         data.user.id,
-                email:      data.user.email ?? email,
-                first_name: meta.first_name,
-                last_name:  meta.last_name,
-                phone:      meta.phone,
-                is_pro:     false,
-            }, { onConflict: 'id' })
-
-            await supabase.from('user_credits').upsert(
-                { user_id: data.user.id, credits: 3 },
-                { onConflict: 'user_id', ignoreDuplicates: true }
-            )
+            // Fire-and-forget — DB trigger already handles profile creation.
+            // These are backup only and must NOT block or fail the signup flow.
+            const uid = data.user.id
+            const uemail = data.user.email ?? email
+            void (async () => {
+                try {
+                    await supabase.from('users').upsert({
+                        id:         uid,
+                        email:      uemail,
+                        first_name: meta.first_name,
+                        last_name:  meta.last_name,
+                        phone:      meta.phone,
+                        is_pro:     false,
+                    }, { onConflict: 'id' })
+                    await supabase.from('user_credits').upsert(
+                        { user_id: uid, credits: 3 },
+                        { onConflict: 'user_id', ignoreDuplicates: true }
+                    )
+                } catch { /* ignored — trigger is the primary mechanism */ }
+            })()
 
             return { error: null }
         } catch (e: unknown) {
@@ -196,7 +235,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
             const { error } = await withTimeout(
                 supabase.auth.signInWithPassword({ email, password }),
-                12000
+                30000
             )
             if (error) return { error: translateError(error.message) }
             return { error: null }

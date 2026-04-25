@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from 'react'
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import VibeCard, {
   CleanMockup, BoldMockup, WarmMockup,
@@ -21,7 +21,7 @@ import HowItWorks from './components/HowItWorks'
 import FAQ from './components/FAQ'
 import PaywallModal from './components/PaywallModal'
 import { AIFieldAssistant } from './components/AIFieldAssistant'
-import AdminDashboard from './components/AdminDashboard'
+import AdminApp from './AdminApp'
 import RetentionPopup from './components/RetentionPopup'
 import { useSessionTracker } from './hooks/useSessionTracker'
 import Navbar from './components/Navbar'
@@ -82,6 +82,11 @@ export default function App() {
   const [showPlatform, setShowPlatform] = useState(false)
   const [showPaywall, setShowPaywall] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  // Auto-enter platform when a valid session is detected (page refresh, return visit, etc.)
+  useEffect(() => {
+    if (!isLoading && user) setShowPlatform(true)
+  }, [user, isLoading])
 
   // ── Credits system ───────────────────────────────────
   const isPro = profile?.is_pro ?? false
@@ -315,7 +320,7 @@ export default function App() {
   if (isLoading) return null
 
   // ── Admin panel ─────────────────────────────────────
-  if (isAdmin) return <AdminDashboard />
+  if (isAdmin) return <AdminApp />
 
   return (
     <>

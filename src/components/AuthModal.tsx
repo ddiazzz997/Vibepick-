@@ -137,7 +137,7 @@ export default function AuthModal({ onSuccess }: AuthModalProps) {
                                             className="rounded-lg py-2 px-3 bg-red-400/10 flex items-center justify-between gap-2"
                                         >
                                             <p className="text-red-400 text-xs">{error}</p>
-                                            {(error.includes('tardó') || error.includes('conexión') || error.includes('internet')) && (
+                                            {(error.includes('tardando') || error.includes('tardó') || error.includes('conexión') || error.includes('internet') || error.includes('sesión')) && (
                                                 <button type="button" onClick={() => { setError(''); setLoading(false) }}
                                                     className="text-[10px] font-semibold text-red-300 underline cursor-pointer bg-transparent border-none shrink-0">
                                                     Reintentar
@@ -165,9 +165,17 @@ export default function AuthModal({ onSuccess }: AuthModalProps) {
                                         <motion.div className="absolute top-0 bottom-0 w-1/2 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12"
                                             animate={{ left: ['-100%', '200%'] }} transition={{ duration: 2.5, repeat: Infinity, ease: 'linear' }} />
                                         <span className="relative z-10">
-                                            {loading ? '…' : mode === 'register' ? 'Crear mi cuenta gratis' : 'Entrar'}
+                                            {loading
+                                                ? (mode === 'register' ? 'Creando tu cuenta…' : 'Entrando…')
+                                                : mode === 'register' ? 'Crear mi cuenta gratis' : 'Entrar'}
                                         </span>
                                     </motion.button>
+
+                                    {loading && mode === 'register' && (
+                                        <p className="text-center text-xs text-white/40 mt-1">
+                                            Esto puede tardar hasta 30 segundos en redes lentas
+                                        </p>
+                                    )}
                                 </form>
 
                                 <p className="text-center text-xs text-white/30 mt-5">
