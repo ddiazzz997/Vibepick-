@@ -81,14 +81,23 @@ export default function AdminApp() {
     const [status, setStatus] = useState<AuthStatus>('loading')
 
     useEffect(() => {
+        // Fallback: if getSession takes more than 2s, just show login form
+        const fallback = setTimeout(() => setStatus('login'), 2000)
+
         supabase.auth.getSession().then(({ data }) => {
+            clearTimeout(fallback)
             const sessionEmail = data.session?.user?.email ?? ''
             if (sessionEmail.toLowerCase() === (ADMIN_EMAIL ?? '').toLowerCase()) {
                 setStatus('authorized')
             } else {
                 setStatus('login')
             }
+        }).catch(() => {
+            clearTimeout(fallback)
+            setStatus('login')
         })
+
+        return () => clearTimeout(fallback)
     }, [])
 
     const handleLogout = () => setStatus('login')
