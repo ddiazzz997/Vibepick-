@@ -925,12 +925,12 @@ export default async function handler(req, res) {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                model: 'claude-sonnet-4-20250514',
+                model: 'claude-sonnet-4-5',
                 max_tokens: 2048,
                 system: systemPrompt,
                 messages: messages.map(m => ({
                     role: m.role,
-                    content: m.content,
+                    content: m.content, // string o array de content blocks (texto + imagen)
                 })),
             }),
         });

@@ -36,14 +36,36 @@ export const chatWithAssistant = async (
     language: string = 'es'
 ): Promise<string> => {
     try {
-        // Convertir formato Gemini → formato Claude
-        const messages: ClaudeMessage[] = history.map(msg => ({
-            role: msg.role === 'model' ? 'assistant' as const : 'user' as const,
-            content: msg.parts
-                .filter((p: any) => p.text)
-                .map((p: any) => p.text)
-                .join('\n'),
-        })).filter(m => m.content.trim() !== '')
+        // Convertir formato Gemini → formato Claude (con soporte de imágenes)
+        const messages = history.map(msg => {
+            const role = msg.role === 'model' ? 'assistant' as const : 'user' as const
+            const contentParts: any[] = []
+
+            for (const p of msg.parts) {
+                if (p.text && p.text.trim() !== '') {
+                    contentParts.push({ type: 'text', text: p.text })
+                }
+                if (p.inlineData?.data) {
+                    contentParts.push({
+                        type: 'image',
+                        source: {
+                            type: 'base64',
+                            media_type: p.inlineData.mimeType || 'image/jpeg',
+                            data: p.inlineData.data,
+                        },
+                    })
+                }
+            }
+
+            if (contentParts.length === 0) return null
+
+            return {
+                role,
+                content: contentParts.length === 1 && contentParts[0].type === 'text'
+                    ? contentParts[0].text
+                    : contentParts,
+            }
+        }).filter(Boolean) as ClaudeMessage[]
 
         if (messages.length === 0) {
             return language === 'es'
