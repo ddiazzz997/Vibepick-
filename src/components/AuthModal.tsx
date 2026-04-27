@@ -6,7 +6,10 @@ import { useAuth } from '../context/AuthContext'
 
 const TURNSTILE_SITE_KEY = import.meta.env.DEV
     ? '1x00000000000000000000AA'
-    : (import.meta.env.VITE_TURNSTILE_SITE_KEY as string)
+    : (import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined)
+
+// Only enforce CAPTCHA when a real Cloudflare Turnstile key is configured
+const TURNSTILE_ENABLED = !!TURNSTILE_SITE_KEY && TURNSTILE_SITE_KEY !== 'your_turnstile_site_key_here'
 
 interface AuthModalProps { onSuccess: () => void }
 
@@ -146,9 +149,9 @@ export default function AuthModal({ onSuccess }: AuthModalProps) {
                                         </motion.div>
                                     )}
 
-                                    {mode === 'register' && (
+                                    {mode === 'register' && TURNSTILE_ENABLED && (
                                         <Turnstile
-                                            siteKey={TURNSTILE_SITE_KEY}
+                                            siteKey={TURNSTILE_SITE_KEY!}
                                             onSuccess={(token) => setTurnstileToken(token)}
                                             onError={() => setTurnstileToken(null)}
                                             onExpire={() => setTurnstileToken(null)}
@@ -156,7 +159,7 @@ export default function AuthModal({ onSuccess }: AuthModalProps) {
                                         />
                                     )}
 
-                                    <motion.button type="submit" disabled={loading || (mode === 'register' && !turnstileToken)}
+                                    <motion.button type="submit" disabled={loading || (mode === 'register' && TURNSTILE_ENABLED && !turnstileToken)}
                                         whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                                         className="w-full py-3.5 rounded-xl bg-[var(--accent)] text-white font-bold text-sm
                       hover:brightness-110 transition-all duration-200 cursor-pointer border-none
