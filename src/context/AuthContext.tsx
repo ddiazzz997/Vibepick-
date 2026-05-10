@@ -3,7 +3,7 @@ import {
     useCallback, type ReactNode,
 } from 'react'
 import { supabase } from '../lib/supabase'
-import { type SheetUser } from '../lib/sheets'
+import { sheets, type SheetUser } from '../lib/sheets'
 
 // ── Internal DB row shape ─────────────────────────────────
 interface UserRow {
@@ -218,6 +218,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         { user_id: uid, credits: 3 },
                         { onConflict: 'user_id', ignoreDuplicates: true }
                     )
+                    // Registrar en CRM (Google Sheets)
+                    await sheets.register(meta.first_name, meta.last_name, uemail, meta.phone)
                 } catch { /* ignored — trigger is the primary mechanism */ }
             })()
 
