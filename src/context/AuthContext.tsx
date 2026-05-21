@@ -221,6 +221,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const uid = data.user.id
             const uemail = data.user.email ?? email
             void (async () => {
+                // DB backup writes — isolated from Sheets so a webhook failure
+                // can never abort the upserts mid-flight.
                 try {
                     await Promise.all([
                         supabase.from('users').upsert({
@@ -235,9 +237,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                             { user_id: uid, credits: 3 },
                             { onConflict: 'user_id', ignoreDuplicates: true }
                         ),
-                        sheets.register(meta.first_name, meta.last_name, uemail, meta.phone),
                     ])
-                } catch { /* ignored — trigger is the primary mechanism */ }
+                } catch (err) {
+                    console.error('[signUp] backup DB write failed:', err)
+                }
+                // Sheets CRM — non-critical, runs after DB to never block it
+                try {
+                    await sheets.register(meta.first_name, meta.last_name, uemail, meta.phone)
+                } catch (err) {
+                    console.error('[signUp] sheets.register failed (non-critical):', err)
+                }
             })()
 
             return { error: null }
