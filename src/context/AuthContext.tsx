@@ -123,16 +123,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
                 if (session?.user) {
                     try {
-                        const { data } = await supabase
-                            .from('users')
-                            .select('*')
-                            .eq('id', session.user.id)
-                            .single()
+                        // Retry once on transient network blips before giving up.
+                        let data: UserRow | null = null
+                        for (let attempt = 0; attempt < 2; attempt++) {
+                            if (attempt > 0) await new Promise(r => setTimeout(r, 2000))
+                            const { data: row } = await supabase
+                                .from('users')
+                                .select('*')
+                                .eq('id', session.user.id)
+                                .single()
+                            if (row) { data = row as UserRow; break }
+                        }
 
                         if (!mounted || myVersion !== requestVersion) return
 
                         if (data) {
-                            setFullUser(rowToSheetUser(data as UserRow))
+                            setFullUser(rowToSheetUser(data))
                         } else {
                             // Profile missing — create it now (parallel writes for speed).
                             const m = session.user.user_metadata ?? {}
@@ -159,8 +165,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     } catch (e: unknown) {
                         if (mounted && myVersion === requestVersion) {
                             const msg = (e as Error)?.message?.toLowerCase() ?? ''
-                            const isNetworkError = msg.includes('fetch') || msg.includes('network') || msg.includes('failed')
-                            if (isNetworkError) setIsSupabaseDown(true)
+                            // Only mark as down if it's a hard fetch failure — not a retry-able blip.
+                            const isHardNetworkError = msg.includes('failed to fetch') || (msg.includes('fetch') && !msg.includes('timeout'))
+                            if (isHardNetworkError) setIsSupabaseDown(true)
                             setFullUser(null)
                         }
                     }
@@ -252,7 +259,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             return { error: null }
         } catch (e: unknown) {
             const msg = (e as Error)?.message ?? ''
-            const isNetworkError = msg.toLowerCase().includes('fetch') || msg.toLowerCase().includes('network')
+            // signUp may have succeeded server-side even if the client timed out.
+            // Try a silent sign-in before surfacing the error — if it works, the
+            // account exists and the user should be let through.
+            if (msg.toUpperCase() === 'TIMEOUT' || msg.toUpperCase().includes('TIMEOUT')) {
+                try {
+                    const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password })
+                    if (!signInErr) { setIsSupabaseDown(false); return { error: null } }
+                } catch { /* recovery failed — fall through to original error */ }
+            }
+            // Only flag Supabase as down for genuine network failures, not latency timeouts.
+            const isNetworkError = msg.toLowerCase().includes('fetch') || msg.toLowerCase().includes('network') || msg.toLowerCase().includes('failed to fetch')
             if (isNetworkError) setIsSupabaseDown(true)
             return { error: translateError(msg) }
         }
@@ -273,7 +290,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             return { error: null }
         } catch (e: unknown) {
             const msg = (e as Error)?.message ?? ''
-            const isNetworkError = msg.toLowerCase().includes('fetch') || msg.toLowerCase().includes('network') || msg.toLowerCase().includes('timeout')
+            // Timeout = high latency, NOT Supabase being down. Only true network
+            // failures (fetch/network) should activate the down banner.
+            const isNetworkError = msg.toLowerCase().includes('fetch') || msg.toLowerCase().includes('network') || msg.toLowerCase().includes('failed to fetch')
             if (isNetworkError) setIsSupabaseDown(true)
             return { error: translateError(msg) }
         }
