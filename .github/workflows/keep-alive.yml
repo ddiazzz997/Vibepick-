@@ -1,46 +1,46 @@
-# Supabase Keep-Alive — Backup
+# Supabase Keep-Alive — Backup cada 6 horas
 #
-# Propósito: Respaldo del cron de Vercel.
-# Hace ping directo a Supabase cada 4 días para prevenir pausa por inactividad.
-# El plan gratuito de Supabase pausa proyectos después de 7 días sin actividad.
+# Propósito: Respaldo del cron de Vercel (que solo puede correr 1x/día en Hobby).
+# Hace un SELECT real a la DB de Supabase cada 6 horas para garantizar actividad
+# genuina y prevenir la pausa automática del plan gratuito (7 días sin actividad).
 #
 # Doble protección:
-#   - Vercel cron: cada día a las 09:00 UTC (vercel.json)
-#   - Este workflow: cada 4 días a las 10:00 UTC (backup)
+#   - Vercel cron: cada día a las 09:00 UTC (vercel.json) → SELECT real a user_credits
+#   - Este workflow: cada 6 horas → SELECT real a user_credits (gap máximo = 6h)
 
 name: Supabase Keep-Alive
 
 on:
   schedule:
-    - cron: '0 10 */4 * *'   # Cada 4 días a las 10:00 UTC
-  workflow_dispatch:           # Permite ejecución manual desde GitHub Actions
+    - cron: '0 */6 * * *'   # 00:00, 06:00, 12:00, 18:00 UTC
+  workflow_dispatch:          # Permite ejecución manual desde GitHub Actions
 
 jobs:
   ping:
-    name: Ping Supabase
+    name: Ping Supabase DB
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
     steps:
-      - name: Ping Supabase REST API
+      - name: SELECT real a Supabase DB
         run: |
           SUPABASE_URL="https://ttchpzlsjkazuqhpmazv.supabase.co"
           ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR0Y2hwemxzamthenVxaHBtYXp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0ODkwMjAsImV4cCI6MjA4ODA2NTAyMH0.uxpuIjFkphgnD4bmK6F88c7hjsH_plzxVFTa12VjEZU"
 
-          echo "🏓 Haciendo ping a Supabase: $SUPABASE_URL"
-          echo "🕐 Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "Haciendo SELECT a user_credits para registrar actividad real en DB..."
 
           HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
-            "$SUPABASE_URL/rest/v1/" \
+            "$SUPABASE_URL/rest/v1/user_credits?select=user_id&limit=1" \
             -H "apikey: $ANON_KEY" \
             -H "Authorization: Bearer $ANON_KEY" \
             --max-time 30)
 
-          echo "📊 HTTP Status: $HTTP_CODE"
+          echo "HTTP Status: $HTTP_CODE"
 
-          if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "404" ]; then
-            echo "✅ Supabase activo — proyecto protegido contra pausa."
+          if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "206" ]; then
+            echo "Supabase activo — actividad registrada en DB, proyecto protegido."
           else
-            echo "⚠️ Respuesta inesperada: $HTTP_CODE"
+            echo "Respuesta inesperada: $HTTP_CODE — el proyecto podría estar pausado."
             exit 1
           fi

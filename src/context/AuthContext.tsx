@@ -31,6 +31,7 @@ interface AuthContextType {
     user:                 User | null
     profile:              Profile | null
     isLoading:            boolean
+    isSupabaseDown:       boolean
     showAuth:             boolean
     setShowAuth:          (v: boolean) => void
     signUp:               (email: string, password: string, meta: { first_name: string; last_name: string; phone: string }) => Promise<{ error: string | null }>
@@ -101,10 +102,11 @@ function translateError(msg: string): string {
 
 // ── Provider ──────────────────────────────────────────────
 export function AuthProvider({ children }: { children: ReactNode }) {
-    const [fullUser,    setFullUser]    = useState<SheetUser | null>(null)
-    const [promptCount, setPromptCount] = useState(0)
-    const [isLoading,   setIsLoading]   = useState(true)
-    const [showAuth,    setShowAuth]    = useState(false)
+    const [fullUser,        setFullUser]        = useState<SheetUser | null>(null)
+    const [promptCount,     setPromptCount]     = useState(0)
+    const [isLoading,       setIsLoading]       = useState(true)
+    const [isSupabaseDown,  setIsSupabaseDown]  = useState(false)
+    const [showAuth,        setShowAuth]        = useState(false)
 
     useEffect(() => {
         let mounted = true
@@ -154,11 +156,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                                 .from('users').select('*').eq('id', session.user.id).single()
                             setFullUser(d2 ? rowToSheetUser(d2 as UserRow) : null)
                         }
-                    } catch {
-                        if (mounted && myVersion === requestVersion) setFullUser(null)
+                    } catch (e: unknown) {
+                        if (mounted && myVersion === requestVersion) {
+                            const msg = (e as Error)?.message?.toLowerCase() ?? ''
+                            const isNetworkError = msg.includes('fetch') || msg.includes('network') || msg.includes('failed')
+                            if (isNetworkError) setIsSupabaseDown(true)
+                            setFullUser(null)
+                        }
                     }
                 } else {
-                    if (mounted && myVersion === requestVersion) setFullUser(null)
+                    if (mounted && myVersion === requestVersion) {
+                        setIsSupabaseDown(false)
+                        setFullUser(null)
+                    }
                 }
 
                 if (mounted && myVersion === requestVersion) {
@@ -228,7 +238,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             return { error: null }
         } catch (e: unknown) {
-            return { error: translateError((e as Error)?.message ?? '') }
+            const msg = (e as Error)?.message ?? ''
+            const isNetworkError = msg.toLowerCase().includes('fetch') || msg.toLowerCase().includes('network')
+            if (isNetworkError) setIsSupabaseDown(true)
+            return { error: translateError(msg) }
         }
     }, [])
 
@@ -243,9 +256,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 30000
             )
             if (error) return { error: translateError(error.message) }
+            setIsSupabaseDown(false)
             return { error: null }
         } catch (e: unknown) {
-            return { error: translateError((e as Error)?.message ?? '') }
+            const msg = (e as Error)?.message ?? ''
+            const isNetworkError = msg.toLowerCase().includes('fetch') || msg.toLowerCase().includes('network') || msg.toLowerCase().includes('timeout')
+            if (isNetworkError) setIsSupabaseDown(true)
+            return { error: translateError(msg) }
         }
     }, [])
 
@@ -265,7 +282,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return (
         <AuthContext.Provider value={{
-            user, profile, isLoading, showAuth, setShowAuth,
+            user, profile, isLoading, isSupabaseDown, showAuth, setShowAuth,
             signUp, signIn, signOut, incrementPromptCount,
             fullUser,
         }}>

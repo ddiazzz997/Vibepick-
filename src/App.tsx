@@ -74,7 +74,7 @@ function Step({ n, title, sub }: { n: number; title: string; sub?: string }) {
 /* ── App ── */
 export default function App() {
   const { lang, t } = useLang()
-  const { user, profile, isLoading, setShowAuth, signOut, incrementPromptCount, fullUser } = useAuth()
+  const { user, profile, isLoading, isSupabaseDown, setShowAuth, signOut, incrementPromptCount, fullUser } = useAuth()
 
   // ── Admin dashboard ─────────────────────────────────
   const isAdmin = new URLSearchParams(window.location.search).get('admin') === 'vibepick2026'
@@ -324,6 +324,30 @@ export default function App() {
 
   return (
     <>
+      {/* Banner de servicio no disponible — reemplaza 54 errores por 1 mensaje claro */}
+      {isSupabaseDown && (
+        <div
+          style={{
+            position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
+            background: 'rgba(239,68,68,0.92)', backdropFilter: 'blur(8px)',
+            padding: '10px 20px', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', gap: '12px', fontSize: '14px', color: '#fff',
+          }}
+        >
+          <span>Estamos experimentando problemas de conectividad. Por favor recarga la página.</span>
+          <button
+            onClick={() => window.location.reload()}
+            style={{
+              background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.4)',
+              borderRadius: '8px', padding: '4px 12px', color: '#fff',
+              cursor: 'pointer', fontSize: '13px', fontWeight: 600,
+            }}
+          >
+            Recargar
+          </button>
+        </div>
+      )}
+
       {/* Retention popup for power users */}
       {user && profile && (
         <RetentionPopup

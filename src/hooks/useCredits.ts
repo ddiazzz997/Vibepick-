@@ -20,11 +20,16 @@ const WELCOME_CREDITS = 3
 
 // ── Internal helper: persist credits to DB (fire-and-forget) ─
 function syncCredits(userId: string, value: number): void {
-    supabase
-        .from('user_credits')
-        .update({ credits: value, updated_at: new Date().toISOString() })
-        .eq('user_id', userId)
-        .then(() => { /* background — no action needed on success */ })
+    void (async () => {
+        try {
+            await supabase
+                .from('user_credits')
+                .update({ credits: value, updated_at: new Date().toISOString() })
+                .eq('user_id', userId)
+        } catch (err) {
+            console.error('[useCredits] syncCredits failed:', err)
+        }
+    })()
 }
 
 // ── Hook ──────────────────────────────────────────────────────

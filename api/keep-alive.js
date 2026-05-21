@@ -27,8 +27,9 @@ export default async function handler(req, res) {
     const ts = new Date().toISOString()
 
     try {
-        // Ping ligero: consulta REST API root — suficiente para marcar actividad
-        const response = await fetch(`${supabaseUrl}/rest/v1/`, {
+        // SELECT real a la DB — garantiza que Supabase registra actividad genuina
+        // (el ping al root /rest/v1/ solo toca el API Gateway, no previene la pausa)
+        const response = await fetch(`${supabaseUrl}/rest/v1/user_credits?select=user_id&limit=1`, {
             method: 'GET',
             headers: {
                 apikey: supabaseKey,
@@ -36,16 +37,16 @@ export default async function handler(req, res) {
             },
         })
 
-        const ok = response.status === 200 || response.status === 404 // 404 = sin tablas expuestas = igualmente activo
+        const ok = response.status === 200 || response.status === 206
 
-        console.log(`[keep-alive] ${ts} — Supabase status: ${response.status} — ok: ${ok}`)
+        console.log(`[keep-alive] ${ts} — Supabase DB query status: ${response.status} — ok: ${ok}`)
 
         return res.status(200).json({
             ok,
             supabaseStatus: response.status,
             timestamp: ts,
             message: ok
-                ? 'Supabase activo. Proyecto protegido contra pausa.'
+                ? 'Supabase activo. Query real registrada — proyecto protegido contra pausa.'
                 : `Respuesta inesperada de Supabase: ${response.status}`,
         })
     } catch (err) {
