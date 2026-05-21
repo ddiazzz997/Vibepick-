@@ -1,5 +1,5 @@
 /// <reference types="vite/client" />
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Turnstile } from '@marsidev/react-turnstile'
 import { useAuth } from '../context/AuthContext'
@@ -14,7 +14,7 @@ const TURNSTILE_ENABLED = !!TURNSTILE_SITE_KEY && TURNSTILE_SITE_KEY !== 'your_t
 interface AuthModalProps { onSuccess: () => void }
 
 export default function AuthModal({ onSuccess }: AuthModalProps) {
-    const { signUp, signIn, showAuth, setShowAuth } = useAuth()
+    const { signUp, signIn, showAuth, setShowAuth, user } = useAuth()
 
     const [mode, setMode] = useState<'register' | 'login'>('register')
     const [firstName, setFirstName] = useState('')
@@ -27,6 +27,14 @@ export default function AuthModal({ onSuccess }: AuthModalProps) {
     const [success, setSuccess] = useState(false)
     const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
 
+    // Close modal only once AuthContext confirms the session is ready
+    useEffect(() => {
+        if (success && user) {
+            setShowAuth(false)
+            onSuccess()
+        }
+    }, [success, user])
+
     if (!showAuth) return null
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -38,11 +46,11 @@ export default function AuthModal({ onSuccess }: AuthModalProps) {
             if (mode === 'register') {
                 const res = await signUp(email, password, { first_name: firstName, last_name: lastName, phone })
                 if (res.error) { setError(res.error); setLoading(false) }
-                else { setSuccess(true); setTimeout(() => { setShowAuth(false); onSuccess() }, 1800) }
+                else { setSuccess(true) } // modal closes via useEffect when user is confirmed in context
             } else {
                 const res = await signIn(email, password)
                 if (res.error) { setError(res.error); setLoading(false) }
-                else { setLoading(false); setShowAuth(false); onSuccess() }
+                else { setSuccess(true) } // modal closes via useEffect when user is confirmed in context
             }
         } catch {
             setError('Error inesperado. Verifica tu conexión e intenta de nuevo.')

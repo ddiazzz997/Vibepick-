@@ -108,6 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         let mounted = true
+        let requestVersion = 0
 
         // Never block the UI more than 4s on initial session check
         const timeout = setTimeout(() => { if (mounted) setIsLoading(false) }, 4000)
@@ -115,6 +116,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (_event, session) => {
                 if (!mounted) return
+
+                const myVersion = ++requestVersion
 
                 if (session?.user) {
                     try {
@@ -124,7 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                             .eq('id', session.user.id)
                             .single()
 
-                        if (!mounted) return
+                        if (!mounted || myVersion !== requestVersion) return
 
                         if (data) {
                             setFullUser(rowToSheetUser(data as UserRow))
@@ -146,19 +149,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                                 { onConflict: 'user_id', ignoreDuplicates: true }
                             )
 
-                            if (!mounted) return
+                            if (!mounted || myVersion !== requestVersion) return
                             const { data: d2 } = await supabase
                                 .from('users').select('*').eq('id', session.user.id).single()
                             setFullUser(d2 ? rowToSheetUser(d2 as UserRow) : null)
                         }
                     } catch {
-                        if (mounted) setFullUser(null)
+                        if (mounted && myVersion === requestVersion) setFullUser(null)
                     }
                 } else {
-                    if (mounted) setFullUser(null)
+                    if (mounted && myVersion === requestVersion) setFullUser(null)
                 }
 
-                if (mounted) {
+                if (mounted && myVersion === requestVersion) {
                     clearTimeout(timeout)
                     setIsLoading(false)
                 }

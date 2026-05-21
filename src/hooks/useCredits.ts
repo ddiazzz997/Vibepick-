@@ -63,12 +63,12 @@ export function useCredits(isLoggedIn: boolean, isPro: boolean) {
             if (cancelled) return
 
             if (error || !data) {
-                // Primera vez — insertar créditos de bienvenida
-                const { error: insertError } = await supabase
+                // Primera vez — upsert para evitar race condition con múltiples tabs
+                const { error: upsertError } = await supabase
                     .from('user_credits')
-                    .insert({ user_id: user.id, credits: WELCOME_CREDITS })
+                    .upsert({ user_id: user.id, credits: WELCOME_CREDITS }, { onConflict: 'user_id', ignoreDuplicates: true })
 
-                if (!cancelled && !insertError) {
+                if (!cancelled && !upsertError) {
                     setCredits(WELCOME_CREDITS)
                     setInitialized(true)
                 }

@@ -16,12 +16,17 @@ export function usePromptHistory() {
 
     const loadHistory = useCallback(async (userId: string) => {
         setLoading(true)
-        const { data } = await supabase
+        const { data, error } = await supabase
             .from('prompt_history')
             .select('id, description, vibe, sections, prompt_text, created_at')
             .eq('user_id', userId)
             .order('created_at', { ascending: false })
             .limit(20)
+        if (error) {
+            console.error('[usePromptHistory] loadHistory error:', error)
+            setLoading(false)
+            return
+        }
         setHistory((data as PromptHistoryItem[]) ?? [])
         setLoading(false)
     }, [])
@@ -30,7 +35,7 @@ export function usePromptHistory() {
         userId: string,
         entry: { description: string; vibe?: string; sections?: string[]; prompt_text: string }
     ) => {
-        const { data } = await supabase
+        const { data, error } = await supabase
             .from('prompt_history')
             .insert({
                 user_id:     userId,
@@ -42,6 +47,10 @@ export function usePromptHistory() {
             .select('id, description, vibe, sections, prompt_text, created_at')
             .single()
 
+        if (error) {
+            console.error('[usePromptHistory] savePrompt error:', error)
+            return
+        }
         if (data) {
             setHistory(prev => [data as PromptHistoryItem, ...prev.slice(0, 19)])
         }
