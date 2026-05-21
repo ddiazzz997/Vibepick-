@@ -926,7 +926,8 @@ export default async function handler(req, res) {
             },
             body: JSON.stringify({
                 model: 'claude-sonnet-4-6',
-                max_tokens: 2048,
+                // assets and inspiration generate long multi-field annotations
+                max_tokens: ['assets', 'inspiration'].includes(fieldType) ? 4096 : 2048,
                 system: systemPrompt,
                 messages: messages.map(m => ({
                     role: m.role,
