@@ -27,12 +27,13 @@ export default function AuthModal({ onSuccess }: AuthModalProps) {
     const [success, setSuccess] = useState(false)
     const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
 
-    // Close modal only once AuthContext confirms the session is ready
+    // Close modal as soon as session is confirmed, with a 3s fallback so
+    // slow Supabase triggers never leave the user stuck on the success screen.
     useEffect(() => {
-        if (success && user) {
-            setShowAuth(false)
-            onSuccess()
-        }
+        if (!success) return
+        if (user) { setShowAuth(false); onSuccess(); return }
+        const t = setTimeout(() => { setShowAuth(false); onSuccess() }, 3000)
+        return () => clearTimeout(t)
     }, [success, user])
 
     if (!showAuth) return null

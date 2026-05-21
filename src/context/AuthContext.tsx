@@ -134,22 +134,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         if (data) {
                             setFullUser(rowToSheetUser(data as UserRow))
                         } else {
-                            // Profile missing — create it now.
-                            // Covers: pre-trigger users, trigger failure, signUp upsert failure.
+                            // Profile missing — create it now (parallel writes for speed).
                             const m = session.user.user_metadata ?? {}
-                            await supabase.from('users').upsert({
-                                id:         session.user.id,
-                                email:      session.user.email ?? '',
-                                first_name: (m.first_name ?? '') as string,
-                                last_name:  (m.last_name  ?? '') as string,
-                                phone:      (m.phone      ?? '') as string,
-                                is_pro:     false,
-                            }, { onConflict: 'id' })
-
-                            await supabase.from('user_credits').upsert(
-                                { user_id: session.user.id, credits: 3 },
-                                { onConflict: 'user_id', ignoreDuplicates: true }
-                            )
+                            await Promise.all([
+                                supabase.from('users').upsert({
+                                    id:         session.user.id,
+                                    email:      session.user.email ?? '',
+                                    first_name: (m.first_name ?? '') as string,
+                                    last_name:  (m.last_name  ?? '') as string,
+                                    phone:      (m.phone      ?? '') as string,
+                                    is_pro:     false,
+                                }, { onConflict: 'id' }),
+                                supabase.from('user_credits').upsert(
+                                    { user_id: session.user.id, credits: 3 },
+                                    { onConflict: 'user_id', ignoreDuplicates: true }
+                                ),
+                            ])
 
                             if (!mounted || myVersion !== requestVersion) return
                             const { data: d2 } = await supabase
@@ -195,11 +195,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         meta:     { first_name: string; last_name: string; phone: string }
     ): Promise<{ error: string | null }> => {
         try {
-            const { data, error } = await supabase.auth.signUp({
-                email,
-                password,
-                options: { data: { first_name: meta.first_name, last_name: meta.last_name, phone: meta.phone } },
-            })
+            const { data, error } = await withTimeout(
+                supabase.auth.signUp({
+                    email,
+                    password,
+                    options: { data: { first_name: meta.first_name, last_name: meta.last_name, phone: meta.phone } },
+                }),
+                20000
+            )
 
             if (error) {
                 const m = error.message.toLowerCase()
@@ -219,20 +222,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const uemail = data.user.email ?? email
             void (async () => {
                 try {
-                    await supabase.from('users').upsert({
-                        id:         uid,
-                        email:      uemail,
-                        first_name: meta.first_name,
-                        last_name:  meta.last_name,
-                        phone:      meta.phone,
-                        is_pro:     false,
-                    }, { onConflict: 'id' })
-                    await supabase.from('user_credits').upsert(
-                        { user_id: uid, credits: 3 },
-                        { onConflict: 'user_id', ignoreDuplicates: true }
-                    )
-                    // Registrar en CRM (Google Sheets)
-                    await sheets.register(meta.first_name, meta.last_name, uemail, meta.phone)
+                    await Promise.all([
+                        supabase.from('users').upsert({
+                            id:         uid,
+                            email:      uemail,
+                            first_name: meta.first_name,
+                            last_name:  meta.last_name,
+                            phone:      meta.phone,
+                            is_pro:     false,
+                        }, { onConflict: 'id' }),
+                        supabase.from('user_credits').upsert(
+                            { user_id: uid, credits: 3 },
+                            { onConflict: 'user_id', ignoreDuplicates: true }
+                        ),
+                        sheets.register(meta.first_name, meta.last_name, uemail, meta.phone),
+                    ])
                 } catch { /* ignored — trigger is the primary mechanism */ }
             })()
 
