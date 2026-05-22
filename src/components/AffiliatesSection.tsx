@@ -69,7 +69,7 @@ export default function AffiliatesSection({ onCTAClick }: AffiliatesSectionProps
                 .from('affiliates')
                 .select('referral_code, referred_count, earnings')
                 .eq('user_id', user.id)
-                .single()
+                .maybeSingle()
             if (existing) {
                 setAffiliate(existing as AffiliateRow)
             } else {
@@ -78,7 +78,7 @@ export default function AffiliatesSection({ onCTAClick }: AffiliatesSectionProps
                     .from('affiliates')
                     .insert({ user_id: user.id, referral_code, referred_count: 0, earnings: 0 })
                     .select('referral_code, referred_count, earnings')
-                    .single()
+                    .maybeSingle()
                 if (created) setAffiliate(created as AffiliateRow)
             }
             setLoadingAffiliate(false)

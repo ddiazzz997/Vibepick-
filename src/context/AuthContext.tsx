@@ -123,44 +123,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
                 if (session?.user) {
                     try {
-                        // Retry once on transient network blips before giving up.
-                        let data: UserRow | null = null
-                        for (let attempt = 0; attempt < 2; attempt++) {
-                            if (attempt > 0) await new Promise(r => setTimeout(r, 2000))
-                            const { data: row } = await supabase
-                                .from('users')
-                                .select('*')
-                                .eq('id', session.user.id)
-                                .single()
-                            if (row) { data = row as UserRow; break }
-                        }
+                        const { data: row } = await supabase
+                            .from('users')
+                            .select('*')
+                            .eq('id', session.user.id)
+                            .maybeSingle()
 
                         if (!mounted || myVersion !== requestVersion) return
 
-                        if (data) {
-                            setFullUser(rowToSheetUser(data))
+                        if (row) {
+                            setFullUser(rowToSheetUser(row as UserRow))
                         } else {
-                            // Profile missing — create it now (parallel writes for speed).
+                            // New user — build the row locally and set state immediately.
+                            // Persist to DB in the background; UI doesn't need to wait.
                             const m = session.user.user_metadata ?? {}
-                            await Promise.all([
-                                supabase.from('users').upsert({
-                                    id:         session.user.id,
-                                    email:      session.user.email ?? '',
-                                    first_name: (m.first_name ?? '') as string,
-                                    last_name:  (m.last_name  ?? '') as string,
-                                    phone:      (m.phone      ?? '') as string,
-                                    is_pro:     false,
-                                }, { onConflict: 'id' }),
+                            const newRow: UserRow = {
+                                id:         session.user.id,
+                                email:      session.user.email ?? '',
+                                first_name: (m.first_name ?? '') as string,
+                                last_name:  (m.last_name  ?? '') as string,
+                                phone:      (m.phone      ?? '') as string,
+                                is_pro:     false,
+                                created_at: new Date().toISOString(),
+                            }
+                            // Set user immediately — no second round-trip read.
+                            if (mounted && myVersion === requestVersion) setFullUser(rowToSheetUser(newRow))
+                            // Persist in background.
+                            void Promise.all([
+                                supabase.from('users').upsert(newRow, { onConflict: 'id' }),
                                 supabase.from('user_credits').upsert(
                                     { user_id: session.user.id, credits: 3 },
                                     { onConflict: 'user_id', ignoreDuplicates: true }
                                 ),
                             ])
-
-                            if (!mounted || myVersion !== requestVersion) return
-                            const { data: d2 } = await supabase
-                                .from('users').select('*').eq('id', session.user.id).single()
-                            setFullUser(d2 ? rowToSheetUser(d2 as UserRow) : null)
                         }
                     } catch (e: unknown) {
                         if (mounted && myVersion === requestVersion) {
@@ -223,38 +218,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
             if (!data.user) return { error: 'No se pudo crear la cuenta. Intenta de nuevo.' }
 
-            // Fire-and-forget — DB trigger already handles profile creation.
-            // These are backup only and must NOT block or fail the signup flow.
-            const uid = data.user.id
+            // Fire-and-forget — Sheets CRM only, non-critical.
+            // DB profile is created by onAuthStateChange immediately after session starts.
             const uemail = data.user.email ?? email
-            void (async () => {
-                // DB backup writes — isolated from Sheets so a webhook failure
-                // can never abort the upserts mid-flight.
-                try {
-                    await Promise.all([
-                        supabase.from('users').upsert({
-                            id:         uid,
-                            email:      uemail,
-                            first_name: meta.first_name,
-                            last_name:  meta.last_name,
-                            phone:      meta.phone,
-                            is_pro:     false,
-                        }, { onConflict: 'id' }),
-                        supabase.from('user_credits').upsert(
-                            { user_id: uid, credits: 3 },
-                            { onConflict: 'user_id', ignoreDuplicates: true }
-                        ),
-                    ])
-                } catch (err) {
-                    console.error('[signUp] backup DB write failed:', err)
-                }
-                // Sheets CRM — non-critical, runs after DB to never block it
-                try {
-                    await sheets.register(meta.first_name, meta.last_name, uemail, meta.phone)
-                } catch (err) {
-                    console.error('[signUp] sheets.register failed (non-critical):', err)
-                }
-            })()
+            void sheets.register(meta.first_name, meta.last_name, uemail, meta.phone)
+                .catch((err: unknown) => console.error('[signUp] sheets.register failed:', err))
 
             return { error: null }
         } catch (e: unknown) {

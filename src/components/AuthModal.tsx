@@ -32,7 +32,7 @@ export default function AuthModal({ onSuccess }: AuthModalProps) {
     useEffect(() => {
         if (!success) return
         if (user) { setShowAuth(false); onSuccess(); return }
-        const t = setTimeout(() => { setShowAuth(false); onSuccess() }, 3000)
+        const t = setTimeout(() => { setShowAuth(false); onSuccess() }, 2000)
         return () => clearTimeout(t)
     }, [success, user])
 

@@ -5,16 +5,21 @@ const WEBHOOK = (import.meta as any).env?.VITE_SHEETS_WEBHOOK_URL as string | un
 
 async function post(data: object): Promise<any> {
     if (!WEBHOOK) { console.warn('VITE_SHEETS_WEBHOOK_URL not set'); return { success: false, error: 'No webhook URL' } }
+    const ctrl = new AbortController()
+    const timer = setTimeout(() => ctrl.abort(), 5000)
     try {
         const res = await fetch(WEBHOOK, {
             method: 'POST',
             redirect: 'follow',
             body: JSON.stringify(data),
+            signal: ctrl.signal,
         })
         return await res.json()
     } catch (err) {
         console.error('Sheets POST error:', err)
         return { success: false, error: String(err) }
+    } finally {
+        clearTimeout(timer)
     }
 }
 

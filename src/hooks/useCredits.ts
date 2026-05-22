@@ -63,7 +63,7 @@ export function useCredits(isLoggedIn: boolean, isPro: boolean) {
                 .from('user_credits')
                 .select('credits')
                 .eq('user_id', user.id)
-                .single()
+                .maybeSingle()
 
             if (cancelled) return
 
