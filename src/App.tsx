@@ -624,7 +624,7 @@ export default function App() {
                   {/* 4 — Sections */}
                   <motion.section variants={sectionVariants} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-40px' }} transition={{ duration: 0.55 }} className="glass-panel">
                     <Step n={4} title={t.step4Title} sub={t.step4Sub} />
-                    <SectionBuilder selected={sections} onChange={setSections} />
+                    <SectionBuilder selected={sections} onChange={setSections} description={desc} niche={effectiveNiche} />
                   </motion.section>
 
                   {/* 5 — CTA */}

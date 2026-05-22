@@ -198,17 +198,21 @@ export function AIFieldAssistant({ fieldType, contextData, onSelect, onSelectFie
         setLoading(true);
 
         try {
-            const history = newMessages.map(msg => {
-                const parts: any[] = [{ text: msg.content }];
-                if (msg.imageBase64) {
-                    const mimeType = msg.imageBase64.match(/:(.*?);/)?.[1] || 'image/jpeg';
-                    const base64Data = msg.imageBase64.split(',')[1];
-                    if (base64Data) {
-                        parts.push({ inlineData: { data: base64Data, mimeType } });
+            // Skip the synthetic initial assistant message (id ends in '-init').
+            // Claude API requires the conversation to start with role 'user'.
+            const history = newMessages
+                .filter(msg => !msg.id.endsWith('-init'))
+                .map(msg => {
+                    const parts: any[] = [{ text: msg.content }];
+                    if (msg.imageBase64) {
+                        const mimeType = msg.imageBase64.match(/:(.*?);/)?.[1] || 'image/jpeg';
+                        const base64Data = msg.imageBase64.split(',')[1];
+                        if (base64Data) {
+                            parts.push({ inlineData: { data: base64Data, mimeType } });
+                        }
                     }
-                }
-                return { role: msg.role === 'user' ? 'user' : 'model', parts };
-            });
+                    return { role: msg.role === 'user' ? 'user' : 'model', parts };
+                });
 
             const result = await chatWithAssistant(fieldType, history as any, contextData, language);
             const { conversational, finalContent, finalField } = parseFinalText(result);

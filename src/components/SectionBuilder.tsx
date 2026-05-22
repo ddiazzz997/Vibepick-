@@ -32,9 +32,11 @@ const sectionIcons: Record<string, React.ReactNode> = {
 interface Props {
   selected: string[]
   onChange: (s: string[]) => void
+  description?: string
+  niche?: string
 }
 
-export default function SectionBuilder({ selected, onChange }: Props) {
+export default function SectionBuilder({ selected, onChange, description = '', niche = '' }: Props) {
   const { t, lang } = useLang()
   const available = ALL_SECTIONS.filter((s) => !selected.includes(s))
 
@@ -174,8 +176,12 @@ export default function SectionBuilder({ selected, onChange }: Props) {
       <div className="mt-6 flex justify-start">
         <AIFieldAssistant
           fieldType="sectionBuilder"
-          contextData={{ module: 'sectionBuilder' }}
-          onSelect={() => { }}
+          contextData={{ description, niche }}
+          onSelect={(text) => {
+            // Parse comma-separated section list from AI and apply it
+            const parsed = text.split(',').map(s => s.trim()).filter(s => ALL_SECTIONS.includes(s))
+            if (parsed.length > 0) onChange(parsed)
+          }}
           language={lang}
         />
       </div>

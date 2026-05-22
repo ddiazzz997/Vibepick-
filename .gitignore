@@ -10,3 +10,4 @@ Vibepick-Brand-Guidelines.pdf
 test-results
 playwright-report
 .vercel
+.env*.local
